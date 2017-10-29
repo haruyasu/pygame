@@ -1,2 +1,3 @@
 # pygame
-pygame training
+Python Training
+- helicopter game
