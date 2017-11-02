@@ -1,3 +1,4 @@
 # pygame
-Python Training
-- helicopter game
+Python Training Game
+- helicopter
+- breakout
