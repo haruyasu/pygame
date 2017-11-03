@@ -53,6 +53,7 @@ class Score():
     def __init__(self, x, y):
         self.sysfont = pygame.font.SysFont(None, 20)
         self.score = 0
+        (self.x, self.y) = (x, y)
 
     def draw(self, screen):
         img = self.sysfont.render("SCORE:" + str(self.score), True, (255, 255, 250))
@@ -82,7 +83,22 @@ def main():
     Ball("ball.png", paddle, blocks, score)
     clock = pygame.time.Clock()
 
+    while (1):
+        clock.tick(60)
+        screen.fill((0, 20, 0))
+        group.update()
+        group.draw(screen)
+        score.draw(screen)
+        pygame.display.update()
 
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                pygame.quit()
+                sys.exit()
 
 if __name__ == '__main__':
     main()
