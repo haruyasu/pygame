@@ -3,7 +3,7 @@ from pygame.locals import *
 import math, sys
 import pygame.mixer
 
-SCREEN = Rect(0, 0, 400, 400)
+SCREEN = Rect(0, 0, 410, 400)
 
 class Paddle(pygame.sprite.Sprite):
     def __init__(self, filename):
@@ -42,8 +42,8 @@ class Ball(pygame.sprite.Sprite):
             self.update = self.move
 
     def move(self):
-        self.rect.conterx += self.dx
-        self.rect.contery += self.dy
+        self.rect.centerx += self.dx
+        self.rect.centery += self.dy
 
         if self.rect.left < SCREEN.left:
             self.rect.left = SCREEN.left
@@ -68,7 +68,36 @@ class Ball(pygame.sprite.Sprite):
             self.dy = -self.speed * math.sin(angle)
             self.paddle_sound.play()
 
+        if self.rect.top > SCREEN.bottom:
+            self.update = self.start
+            self.gameover_sound.play()
+            self.hit = 0
+            self.score.add_score(-100)
 
+        blocks_collided = pygame.sprite.spritecollide(self, self.blocks, True)
+
+        if blocks_collided:
+            oldrect = self.rect
+            for block in blocks_collided:
+                if oldrect.left < block.rect.left < oldrect.right < block.rect.right:
+                    self.rect.right = block.rect.left
+                    self.dx = -self.dx
+
+                if block.rect.left < oldrect.left < block.rect.right < oldrect.right:
+                    self.rect.left = block.rect.right
+                    self.dx = -self.dx
+
+                if oldrect.top < block.rect.top < oldrect.bottom < block.rect.bottom:
+                    self.rect.bottom = block.rect.top
+                    self.dy = -self.dy
+
+                if block.rect.top < oldrect.top < block.rect.bottom < oldrect.bottom:
+                    self.rect.top = block.rect.bottom
+                    self.dy = -self.dy
+
+                self.block_sound.play()
+                self.hit += 1
+                self.score.add_score(self.hit * 10)
 
 class Block(pygame.sprite.Sprite):
     def __init__(self, filename, x, y):
@@ -94,9 +123,9 @@ class Score():
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCREEN.size)
-    Ball.paddle_sound = pygame.mixer.Sound("flashing.mp3")
-    Ball.block_sound = pygame.mixer.Sound("flying_pan.mp3")
-    Ball.gameover_sound = pygame.mixer.Sound("badend1.mp3")
+    Ball.paddle_sound = pygame.mixer.Sound("flashing.wav")
+    Ball.block_sound = pygame.mixer.Sound("flying_pan.wav")
+    Ball.gameover_sound = pygame.mixer.Sound("badend1.wav")
     group = pygame.sprite.RenderUpdates()
     blocks = pygame.sprite.Group()
     Paddle.containers = group
