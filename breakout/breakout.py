@@ -41,6 +41,35 @@ class Ball(pygame.sprite.Sprite):
             self.dy = -self.speed
             self.update = self.move
 
+    def move(self):
+        self.rect.conterx += self.dx
+        self.rect.contery += self.dy
+
+        if self.rect.left < SCREEN.left:
+            self.rect.left = SCREEN.left
+            self.dx = -self.dx
+
+        if self.rect.right > SCREEN.right:
+            self.rect.right = SCREEN.right
+            self.dx = -self.dx
+
+        if self.rect.top < SCREEN.top:
+            self.rect.top = SCREEN.top
+            self.dy = -self.dy
+
+        if self.rect.colliderect(self.paddle.rect) and self.dy > 0:
+            self.hit = 0
+            (x1, y1) = (self.paddle.rect.left - self.rect.width, self.angle_left)
+            (x2, y2) = (self.paddle.rect.right, self.angle_right)
+            x = self.rect.left
+            y = (float(y2 - y1) / (x2 - x1)) * (x - x1) + y1
+            angle = math.radians(y)
+            self.dx = self.speed * math.cos(angle)
+            self.dy = -self.speed * math.sin(angle)
+            self.paddle_sound.play()
+
+
+
 class Block(pygame.sprite.Sprite):
     def __init__(self, filename, x, y):
         pygame.sprite.Sprite.__init__(self, self.containers)
