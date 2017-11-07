@@ -2,8 +2,20 @@ import pygame
 from pygame.locals import *
 import sys
 
+def calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y):
+    return ball_x, ball_y, ball_vx, ball_vy
+
+def calc_ai(ball_x, ball_y, bar2_x, bar2_y):
+    return bar2_y
+
+def calc_player(bar1_y, bar1_dy):
+    return bar1_y
+
+def calc_score(ball_x, score1, score2):
+    return score1, score2
+
 def event(bar1_dy):
-    pass
+    return bar1_dy
 
 def main():
     bar1_x, bar1_y = 10.0 , 215.0
@@ -39,8 +51,15 @@ def main():
         screen.blit(font.render(str(score1), True, (255, 255, 255)), (255.0, 10.0))
         screen.blit(font.render(str(score2), True, (255, 255, 255)), (400.0, 10.0))
         bar1_dy = event(bar1_dy)
-
-
+        bar1_y = calc_player(bar1_y, bar1_dy)
+        time_passed = clock.tick(30)
+        time_sec = time_passed / 1000.0
+        ball_x += ball_vx * time_sec
+        ball_y += ball_vy * time_sec
+        score1, score2 = calc_score(ball_x, score1, score2)
+        bar2_y = calc_ai(ball_x, ball_y, bar2_x, bar2_y)
+        ball_x, ball_y, ball_vx, ball_vy = calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y)
+        pygame.display.update()
 
 if __name__ == '__main__':
     main()
