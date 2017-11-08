@@ -3,6 +3,27 @@ from pygame.locals import *
 import sys
 
 def calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y):
+    if ball_x <= bar1_x + 10.0:
+        ball_x = 20.0
+        ball_vx = -ball_vx
+
+    if ball_x >= bar2_x - 15:
+        if ball_y >= bar2_y - 7.5 and ball_y <= bar2_y + 42.5:
+            ball_x = 605.0
+            ball_vy = -ball_vx
+
+    if ball_x < 5.0:
+        ball_x, ball_y = 320.0, 232.5
+    elif ball_x > 620.0:
+        ball_x, ball_y = 307.5, 232.5
+
+    if ball_y <= 10.0:
+        ball_vy = -ball_vy
+        ball_y = 10.0
+    elif ball_y >= 457.5:
+        ball_vy = -ball_vy
+        ball_y = 457.5
+
     return ball_x, ball_y, ball_vx, ball_vy
 
 def calc_ai(ball_x, ball_y, bar2_x, bar2_y):
