@@ -27,9 +27,38 @@ def calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y):
     return ball_x, ball_y, ball_vx, ball_vy
 
 def calc_ai(ball_x, ball_y, bar2_x, bar2_y):
+    dy = ball_y - bar2_y
+    if dy > 80:
+        bar2_y += 20
+    elif dy > 50:
+        bar2_y += 15
+    elif dy > 30:
+        bar2_y += 12
+    elif dy > 10:
+        bar2_y += 8
+    elif dy < -80:
+        bar2_y -= 20
+    elif dy < -50:
+        bar2_y -= 15
+    elif dy < -30:
+        bar2_y -= 12
+    elif dy < -10:
+        bar2_y -= 8
+
+    if bar2_y >= 420:
+        bar2_y = 420.0
+    elif bar2_y <= 10.0:
+        bar2_y = 10.0
+
     return bar2_y
 
 def calc_player(bar1_y, bar1_dy):
+    bar1_y += bar1_dy
+    if bar1_y >= 420.0:
+        bar1_y = 10.0
+    elif bar1_y <= 10.0:
+        bar1_y = 10.0
+
     return bar1_y
 
 def calc_score(ball_x, score1, score2):
