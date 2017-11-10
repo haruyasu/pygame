@@ -4,8 +4,9 @@ import sys
 
 def calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y):
     if ball_x <= bar1_x + 10.0:
-        ball_x = 20.0
-        ball_vx = -ball_vx
+        if ball_y >= bar1_y - 7.5 and ball_y <= bar1_y + 42.5:
+            ball_x = 20.0
+            ball_vx = -ball_vx
 
     if ball_x >= bar2_x - 15:
         if ball_y >= bar2_y - 7.5 and ball_y <= bar2_y + 42.5:
@@ -55,16 +56,38 @@ def calc_ai(ball_x, ball_y, bar2_x, bar2_y):
 def calc_player(bar1_y, bar1_dy):
     bar1_y += bar1_dy
     if bar1_y >= 420.0:
-        bar1_y = 10.0
+        bar1_y = 420.0
     elif bar1_y <= 10.0:
         bar1_y = 10.0
 
     return bar1_y
 
 def calc_score(ball_x, score1, score2):
+    if ball_x < 5.0:
+        score2 += 1
+
+    if ball_x > 620.0:
+        score1 += 1
+
     return score1, score2
 
 def event(bar1_dy):
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == KEYDOWN:
+            if event.key == K_UP:
+                bar1_dy = -10
+            elif event.key == K_DOWN:
+                bar1_dy = 10
+        elif event.type == KEYUP:
+            if event.key == K_UP:
+                bar1_dy = 0.0
+            elif event.key == K_DOWN:
+                bar1_dy = 0.0
+
     return bar1_dy
 
 def main():
