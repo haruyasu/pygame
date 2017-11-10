@@ -8,10 +8,10 @@ def calc_ball(ball_x, ball_y, ball_vx, ball_vy, bar1_x, bar1_y, bar2_x, bar2_y):
             ball_x = 20.0
             ball_vx = -ball_vx
 
-    if ball_x >= bar2_x - 15:
+    if ball_x >= bar2_x - 15.0:
         if ball_y >= bar2_y - 7.5 and ball_y <= bar2_y + 42.5:
             ball_x = 605.0
-            ball_vy = -ball_vx
+            ball_vx = -ball_vx
 
     if ball_x < 5.0:
         ball_x, ball_y = 320.0, 232.5
