@@ -23,16 +23,91 @@ class main():
             self.key_handler()
 
     def init_game(self):
-        pass
+        self.game_state = START
+        self.all = pygame.sprite.RenderUpdates()
+        self.aliens = pygame.sprite.Group()
+        self.shots = pygame.sprite.Group()
+        self.beams = pygame.sprite.Group()
+
+        Player.containers = self.all
+        Shot.containers = self.all, self.shots
+        Alien.containers = self.all, self.aliens
+        Beam.containers = self.all, self.beams
+        Explosion.containers = self.all
+
+        self.player = Player()
+
+        for i in range(0, 50):
+            x = 20 + (i % 10) * 40
+            y = 20 + (i / 10) * 40
+            # Alien((x, y))
 
     def update(self):
-        pass
+        if self.game_state == PLAY:
+            self.all.update()
+            self.collision_detection()
+            if len(self.aliens.sprites()) == 0:
+                self.game_state = GAMEOVER
 
     def draw(self, screen):
-        pass
+        screen.fill((0, 0, 0))
+        if self.game_state == START:
+            title_font = pygame.font.SysFont(None, 80)
+            title = title_font.render("INVADER GAME", False, (204, 51, 0))
+            screen.blit(title, ((SCR_RECT.width - title.get_width()) / 2, 100))
+
+            alien_image = Alien.images[0]
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2 + 30, 200))
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2, 200))
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2 - 30, 200))
+
+            player_imagee = Player.image
+            screen.blit(player_imagee, ((SCR_RECT.width - player_imagee.get_width()) / 2, 240))
+
+            push_font = pygame.font.SysFont(None, 40)
+            push_space = push_font.render("PUSH SPACE KEY", False, (255, 255, 255))
+            screen.blit(push_space, ((SCR_RECT.width - push_space.get_width()) / 2, 300))
+
+            credit_font = pygame.font.SysFont(None, 20)
+            credit = credit_font.render("Haruyasu Kaitori", False, (255, 255, 255))
+            screen.blit(credit, ((SCR_RECT.width - credit.get_width())/ 2, 380))
+        elif self.game_state == PLAY:
+            self.all.draw(screen)
+        elif self.game_state == GAMEOVER:
+            gameover_font = pygame.font.SysFont(None, 80)
+            gameover = gameover_font.render("GAME OVER", False, (255, 0, 0))
+            screen.blit(gameover, ((SCR_RECT.width - gameover.get_width())/ 2, 100))
+
+            alien_image = Alien.images[0]
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2 + 30, 200))
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2, 200))
+            screen.blit(alien_image, ((SCR_RECT.width - alien_image.get_width()) / 2 - 30, 200))
+
+            player_imagee = Player.image
+            screen.blit(player_imagee, ((SCR_RECT.width - player_imagee.get_width()) / 2, 240))
+
+            push_font = pygame.font.SysFont(None, 40)
+            push_space = push_font.render("PUSH SPACE KEY", False, (255, 255, 255))
+            screen.blit(push_space, ((SCR_RECT.width - push_space.get_width()) / 2, 300))
+
+            credit_font = pygame.font.SysFont(None, 20)
+            credit = credit_font.render("Haruyasu Kaitori", False, (255, 255, 255))
+            screen.blit(credit, ((SCR_RECT.width - credit.get_width())/ 2, 380))
 
     def key_handler(self):
-        pass
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_SPACE:
+                if self.game_state == START:
+                    self.game_state = PLAY
+                elif self.game_state == GAMEOVER:
+                    self.init_game()
+                    self.game_state = PLAY
 
     def collision_detection(self):
         pass
