@@ -40,7 +40,7 @@ class main():
         for i in range(0, 50):
             x = 20 + (i % 10) * 40
             y = 20 + (i / 10) * 40
-            # Alien((x, y))
+            Alien((x, y))
 
     def update(self):
         if self.game_state == PLAY:
@@ -110,7 +110,17 @@ class main():
                     self.game_state = PLAY
 
     def collision_detection(self):
-        pass
+        alien_collided = pygame.sprite.groupcollide(self.aliens, self.shots, True, True)
+
+        for alien in alien_collided.key():
+            Alien.kill_sound.play()
+            Explosion(alien.rect.center)
+
+        beam_collided = pygame.sprite.spritecollide(self.player, self.beams, True)
+
+        if beam_collided:
+            Player.bomb_sound.play()
+            self.game_state = GAMEOVER
 
     def load_images(self):
         Player.image = load_image("player.png")
@@ -125,10 +135,56 @@ class main():
         Player.bomb_sound = load_sound("bomb.wav")
 
 class Player(pygame.sprite.Sprite):
-    pass
+    speed = 5
+    reload_time = 15
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.rect = self.image.get_rect()
+        self.rect.bottom = SCR_RECT.bottom
+        self.reload_timer = 0
+
+    def update(self):
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[K_LEFT]:
+            self.rect.move_ip(-self.speed, 0)
+        elif pressed_keys[K_RIGHT]:
+            self.rect.move_ip(self.speed, 0)
+
+        self.rect.clamp_ip(SCR_RECT)
+
+        if pressed_keys[K_SPACE]:
+            if self.reload_timer > 0:
+                self.reload_timer -= 1
+            else:
+                Player.shot_sound.play()
+                Shot(self.rect.center)
+                self.reload_timer = self.reload_time
 
 class Alien(pygame.sprite.Sprite):
-    pass
+    speed = 2
+    animcycle = 18
+    frame = 0
+    move_width = 230
+    prob_beam = 0.005
+
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+        self.left = pos[0]
+        self.right = self.left + self.move_width
+
+    def update(self):
+        self.rect.move_ip(self.speed, 0)
+        if self.rect.center[0] < self.left or self.rect.center[0] > self.right:
+            self.speed = -self.speed
+
+        if random.random() < self.prob_beam:
+            Beam(self.rect.center)
+
+        self.frame += 1
+        self.image = self.images[self.frame / self.animcycle % 2]
 
 class Shot(pygame.sprite.Sprite):
     pass
