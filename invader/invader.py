@@ -112,7 +112,7 @@ class main():
     def collision_detection(self):
         alien_collided = pygame.sprite.groupcollide(self.aliens, self.shots, True, True)
 
-        for alien in alien_collided.key():
+        for alien in alien_collided.keys():
             Alien.kill_sound.play()
             Explosion(alien.rect.center)
 
@@ -187,13 +187,47 @@ class Alien(pygame.sprite.Sprite):
         self.image = self.images[self.frame / self.animcycle % 2]
 
 class Shot(pygame.sprite.Sprite):
-    pass
+    speed = 9
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+
+    def update(self):
+        self.rect.move_ip(0, -self.speed)
+
+        if self.rect.top < 0:
+            self.kill
 
 class Beam(pygame.sprite.Sprite):
-    pass
+    speed = 5
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+
+    def update(self):
+        self.rect.move_ip(0, self.speed)
+
+        if self.rect.bottom > SCR_RECT.height:
+            self.kill()
 
 class Explosion(pygame.sprite.Sprite):
-    pass
+    animcycle = 2
+    frame = 0
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+        self.max_frame = len(self.images) * self.animcycle
+
+    def update(self):
+        self.image = self.images[self.frame / self.animcycle]
+        self.frame += 1
+
+        if self.frame == self.max_frame:
+            self.kill()
 
 def load_image(filename, colorkey=None):
     filename = os.path.join("data", filename)
