@@ -16,6 +16,14 @@ class main():
         self.init_game()
         clock = pygame.time.Clock()
 
+        while True:
+            clock.tick(60)
+            screen.fill((255, 0, 0))
+            self.update()
+            self.draw(screen)
+            pygame.display.update()
+            self.key_handler()
+
     def init_game(self):
         self.game_state = TITLE
         self.cur_menu = PLAY_MENU
@@ -37,6 +45,89 @@ class main():
         self.plane = Plane()
         Bomb.plane = self.plane
         self.score_board = ScoreBoard()
+
+    def update(self):
+        if self.game_state == TITLE:
+            # self.battlefield.update()
+            self.enemies.update()
+        elif self.game_state == PLAY:
+            # self.battlefield.update()
+            self.all.update()
+            self.collide_detection()
+        elif self.game_state == GAMEOVER:
+            # self.battlefield.update()
+            self.enemies.update()
+
+    def draw(self, screen):
+        if self.game_state == TITLE:
+            screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
+            self.enemies.draw(screen)
+            screen.blit(self.title_image, (182, 80))
+            screen.blit(self.play_game_image, (280, 300))
+            screen.blit(self.quit_image, (280, 350))
+
+            if self.cur_menu == PLAY_MENU:
+                screen.blit(self.cursor_image, (270, 300))
+            elif self.cur_menu == QUIT_MENU:
+                screen.blit(self.cursor_image, (270, 350))
+        elif self.game_state == PLAY:
+            screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
+            self.all.draw(screen)
+            self.score_board.draw(screen)
+
+            for i in range(self.plane.power):
+                screen.blit(self.plane.power_image, (10 + i * self.plane.power_image.get_width(), 440))
+        elif self.game_state == GAMEOVER:
+            screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
+            self.enemies.draw(screen)
+            self.score_board.draw(screen)
+            screen.blit(self.gameover_image, (272, 150))
+
+    def key_handler(self):
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == K_UP:
+                    self.cursor_sound.play()
+                    self.cur_menu -= 1
+                    if self.cur_menu < 0:
+                        self.cur_menu = 0
+                elif event.key == K_DOWN:
+                    self.cursor_sound.play()
+                    self.cur_menu += 1
+                    if self.cur_menu > 1:
+                        self.cur_menu = 1
+                elif event.key == K_SPACE:
+                    if self.game_state == TITLE:
+                        self.select_sound.play()
+                        if self.cur_menu == PLAY_MENU:
+                            self.init_game()
+                            self.game_state = PLAY
+                        elif self.cur_menu == QUIT_MENU:
+                            pygame.quit()
+                            sys.exit()
+                    elif self.game_state == GAMEOVER:
+                        self.game_state = TITLE
+
+    def collide_detection(self):
+        for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).key():
+            Explosion(enemy)
+            Enemy.bomb_sound.play()
+            self.score_board.add_score(10)
+
+        if not self.plane.invincible:
+            if pygame.sprite.spritecollide(self.plane, self.obstacles, 1):
+                self.plane.on_invincible()
+                PlaneExplosion(self.plane)
+                Plane.bomb_sound.play()
+                self.plane.power -= 1
+                if self.plane.power == 0:
+                    self.game_state == GAMEOVER
 
     def load_images(self):
         sprite_sheet = SpriteSheet("1945.png")
@@ -76,6 +167,47 @@ class main():
         Enemy.bomb_sound = load_sound("bom24.wav")
         self.cursor_sound = load_sound("cursor07.wav")
         self.select_sound = load_sound("cursor02.wav")
+
+class SpriteSheet():
+    def __init__(self, filename):
+        self.sheet = load_image(filename)
+
+    def image_at(self, rect, colorkey=None):
+        rect = Rect(rect)
+        image = pygame.Surface(rect.size).convert()
+        image.blit(self.sheet, (0, 0), rect)
+        return image_colorkey(image, colorkey)
+
+    def images_at(self, rects, colorkey=None):
+        images = []
+
+        for rect in rects:
+            images.append(self.image_at(rect, colorkey))
+        return images
+
+class Battlefield():
+    pass
+
+class Plane(pygame.sprite.Sprite):
+    pass
+
+class Enemy(pygame.sprite.Sprite):
+    pass
+
+class Shot(pygame.sprite.Sprite):
+    pass
+
+class Bomb(pygame.sprite.Sprite):
+    pass
+
+class Explosion(pygame.sprite.Sprite):
+    pass
+
+class PlaneExplosion(pygame.sprite.Sprite):
+    pass
+
+class ScoreBoard():
+    pass
 
 def image_colorkey(image, colorkey):
     if colorkey is not None:
