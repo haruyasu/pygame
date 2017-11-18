@@ -186,7 +186,27 @@ class SpriteSheet():
         return images
 
 class Battlefield():
-    pass
+    speed = 1
+    enemy_prob = 12
+
+    def __init__(self):
+        w = SCR_RECT.width
+        h = SCR_RECT.height
+        self.tileside = self.ocean_tile.get_height()
+        self.counter = 0
+        self.ocean = pygame.Surface((w, h + self.tileside)).convert()
+
+        for y in range(h / self.tileside + 1):
+            for x in range(w / self.tileside):
+                self.ocean.blit(self.ocean_tile, (x * self.tileside, y * self.tileside))
+
+    def offset(self):
+        self.counter = (self.counter - self.speed) % self.tileside
+        return (0, self.counter, SCR_RECT.width, SCR_RECT.height)
+
+    def update(self):
+        if not random.randrange(self.enemy_prob):
+            Enemy()
 
 class Plane(pygame.sprite.Sprite):
     pass
