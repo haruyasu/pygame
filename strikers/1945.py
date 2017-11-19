@@ -73,7 +73,7 @@ class main():
         elif self.game_state == PLAY:
             screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
             self.all.draw(screen)
-            self.score_board.draw(screen)
+            # self.score_board.draw(screen)
 
             for i in range(self.plane.power):
                 screen.blit(self.plane.power_image, (10 + i * self.plane.power_image.get_width(), 440))
@@ -115,7 +115,7 @@ class main():
                         self.game_state = TITLE
 
     def collide_detection(self):
-        for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).key():
+        for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).keys():
             Explosion(enemy)
             Enemy.bomb_sound.play()
             self.score_board.add_score(10)
@@ -127,7 +127,7 @@ class main():
                 Plane.bomb_sound.play()
                 self.plane.power -= 1
                 if self.plane.power == 0:
-                    self.game_state == GAMEOVER
+                    self.game_state = GAMEOVER
 
     def load_images(self):
         sprite_sheet = SpriteSheet("1945.png")
@@ -209,13 +209,64 @@ class Battlefield():
             Enemy()
 
 class Plane(pygame.sprite.Sprite):
-    pass
+    guns = [(17, 19), (39, 19)]
+    animcycle = 1
+    reload_time = 15
+
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.on_invincible()
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.reload_timer = 0
+        self.frame = 0
+        self.max_frame = len(self.images) * self.animcycle
+        self.power = 3
+
+    def on_invincible(self):
+        self.images = self.transparent_images
+        self.invincible = True
+
+    def off_invincible(self):
+        self.images = self.opaque_images
+        self.invincible = False
+
+    def update(self):
+        self.rect.center = pygame.mouse.get_pos()
+        self.rect = self.rect.clamp(SCR_RECT)
+        self.frame = (self.frame + 1) % self.max_frame
+        self.image = self.images[self.frame / self.animcycle]
+
+        if self.reload_timer > 0:
+            self.reload_timer -= 1
+
+        firing = pygame.mouse.get_pressed()[0]
+
+        if firing and self.reload_timer == 0:
+            if self.invincible:
+                self.off_invincible()
+
+            self.reload_timer = self.reload_time
+
+            for gun in self.guns:
+                Shot((self.rect.left + gun[0], self.rect.top + gun[1]))
 
 class Enemy(pygame.sprite.Sprite):
     pass
 
 class Shot(pygame.sprite.Sprite):
-    pass
+    speed = 9
+
+    def __init__(self, pos):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+
+    def update(self):
+        self.rect.move_ip(0, -self.speed)
+
+        if self.rect.top < 0:
+            self.kill()
 
 class Bomb(pygame.sprite.Sprite):
     pass
