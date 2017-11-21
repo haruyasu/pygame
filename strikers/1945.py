@@ -48,14 +48,14 @@ class main():
 
     def update(self):
         if self.game_state == TITLE:
-            # self.battlefield.update()
+            self.battlefield.update()
             self.enemies.update()
         elif self.game_state == PLAY:
-            # self.battlefield.update()
+            self.battlefield.update()
             self.all.update()
             self.collide_detection()
         elif self.game_state == GAMEOVER:
-            # self.battlefield.update()
+            self.battlefield.update()
             self.enemies.update()
 
     def draw(self, screen):
@@ -80,7 +80,7 @@ class main():
         elif self.game_state == GAMEOVER:
             screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
             self.enemies.draw(screen)
-            self.score_board.draw(screen)
+            # self.score_board.draw(screen)
             screen.blit(self.gameover_image, (272, 150))
 
     def key_handler(self):
@@ -116,14 +116,14 @@ class main():
 
     def collide_detection(self):
         for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).keys():
-            Explosion(enemy)
+            # Explosion(enemy)
             Enemy.bomb_sound.play()
-            self.score_board.add_score(10)
+            # self.score_board.add_score(10)
 
         if not self.plane.invincible:
             if pygame.sprite.spritecollide(self.plane, self.obstacles, 1):
                 self.plane.on_invincible()
-                PlaneExplosion(self.plane)
+                # PlaneExplosion(self.plane)
                 Plane.bomb_sound.play()
                 self.plane.power -= 1
                 if self.plane.power == 0:
@@ -252,7 +252,31 @@ class Plane(pygame.sprite.Sprite):
                 Shot((self.rect.left + gun[0], self.rect.top + gun[1]))
 
 class Enemy(pygame.sprite.Sprite):
-    pass
+    gun = (16, 19)
+    animcycle = 2
+    speed = 3
+    shot_prob = 350
+
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.images = random.choice(self.image_sets)
+        self.image = self.images[0]
+        self.frame = 0
+        self.max_frame = len(self.images) * self.animcycle
+        self.rect = self.image.get_rect()
+        self.rect.left = random.randrange(SCR_RECT.width - self.rect.width)
+        self.rect.bottom = SCR_RECT.top
+
+    def update(self):
+        self.rect.move_ip(0, self.speed)
+        self.frame = (self.frame + 1) % self.max_frame
+        self.image = self.images[self.frame / self.animcycle]
+
+        if self.rect.top > SCR_RECT.bottom:
+            self.kill()
+
+        # if not random.randrange(self.shot_prob):
+        #     Bomb((self.rect.left + self.gun[0], self.rect.top + self.gun[1]))
 
 class Shot(pygame.sprite.Sprite):
     speed = 9
