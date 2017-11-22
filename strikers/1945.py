@@ -275,8 +275,8 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.top > SCR_RECT.bottom:
             self.kill()
 
-        # if not random.randrange(self.shot_prob):
-        #     Bomb((self.rect.left + self.gun[0], self.rect.top + self.gun[1]))
+        if not random.randrange(self.shot_prob):
+            Bomb((self.rect.left + self.gun[0], self.rect.top + self.gun[1]))
 
 class Shot(pygame.sprite.Sprite):
     speed = 9
@@ -293,7 +293,25 @@ class Shot(pygame.sprite.Sprite):
             self.kill()
 
 class Bomb(pygame.sprite.Sprite):
-    pass
+    speed = 5
+    def __init__(self, gun):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.rect = self.image.get_rect()
+        self.rect.centerx, self.centery = gun[0], gun[1]
+        self.fpx = float(self.rect.centerx)
+        self.fpy = float(self.rect.centery)
+        angle = math.atan2(self.plane.rect.centery - gun[1], self.plane.rect.centerx - gun[0])
+        self.fpdx = self.speed * math.cos(angle)
+        self.fpdy = self.speed * math.sin(angle)
+
+    def update(self):
+        self.fpx = self.fpx + self.fpdx
+        self.fpy = self.fpy + self.fpdy
+        self.rect.centerx = int(self.fpx)
+        self.rect.centery = int(self.fpy)
+
+        if not SCR_RECT.contains(self.rect):
+            self.kill()
 
 class Explosion(pygame.sprite.Sprite):
     pass
