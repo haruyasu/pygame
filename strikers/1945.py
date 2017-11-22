@@ -116,7 +116,7 @@ class main():
 
     def collide_detection(self):
         for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).keys():
-            # Explosion(enemy)
+            Explosion(enemy)
             Enemy.bomb_sound.play()
             # self.score_board.add_score(10)
 
@@ -293,7 +293,8 @@ class Shot(pygame.sprite.Sprite):
             self.kill()
 
 class Bomb(pygame.sprite.Sprite):
-    speed = 5
+    speed = 8
+
     def __init__(self, gun):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.rect = self.image.get_rect()
@@ -314,7 +315,21 @@ class Bomb(pygame.sprite.Sprite):
             self.kill()
 
 class Explosion(pygame.sprite.Sprite):
-    pass
+    animcycle = 4
+    def __init__(self, enemy):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.frame = 0
+        self.max_frame = len(self.images) * self.animcycle
+        self.rect = self.image.get_rect()
+        self.rect.center = enemy.rect.center
+
+    def update(self):
+        self.image = self.images[self.frame / self.animcycle]
+        self.frame += 1
+
+        if self.frame == self.max_frame:
+            self.kill()
 
 class PlaneExplosion(pygame.sprite.Sprite):
     pass
