@@ -123,7 +123,7 @@ class main():
         if not self.plane.invincible:
             if pygame.sprite.spritecollide(self.plane, self.obstacles, 1):
                 self.plane.on_invincible()
-                # PlaneExplosion(self.plane)
+                PlaneExplosion(self.plane)
                 Plane.bomb_sound.play()
                 self.plane.power -= 1
                 if self.plane.power == 0:
@@ -332,7 +332,22 @@ class Explosion(pygame.sprite.Sprite):
             self.kill()
 
 class PlaneExplosion(pygame.sprite.Sprite):
-    pass
+    animcycle = 4
+
+    def __init__(self, plane):
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.frame = 0
+        self.max_frame = len(self.images) * self.animcycle
+        self.rect = self.image.get_rect()
+        self.rect.center = plane.rect.center
+
+    def update(self):
+        self.image = self.images[self.frame / self.animcycle]
+        self.frame += 1
+
+        if self.frame == self.max_frame:
+            self.kill()
 
 class ScoreBoard():
     pass
