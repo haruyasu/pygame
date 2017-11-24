@@ -73,14 +73,14 @@ class main():
         elif self.game_state == PLAY:
             screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
             self.all.draw(screen)
-            # self.score_board.draw(screen)
+            self.score_board.draw(screen)
 
             for i in range(self.plane.power):
                 screen.blit(self.plane.power_image, (10 + i * self.plane.power_image.get_width(), 440))
         elif self.game_state == GAMEOVER:
             screen.blit(self.battlefield.ocean, (0, 0), self.battlefield.offset())
             self.enemies.draw(screen)
-            # self.score_board.draw(screen)
+            self.score_board.draw(screen)
             screen.blit(self.gameover_image, (272, 150))
 
     def key_handler(self):
@@ -118,7 +118,7 @@ class main():
         for enemy in pygame.sprite.groupcollide(self.enemies, self.shots, 1, 1).keys():
             Explosion(enemy)
             Enemy.bomb_sound.play()
-            # self.score_board.add_score(10)
+            self.score_board.add_score(10)
 
         if not self.plane.invincible:
             if pygame.sprite.spritecollide(self.plane, self.obstacles, 1):
@@ -350,7 +350,24 @@ class PlaneExplosion(pygame.sprite.Sprite):
             self.kill()
 
 class ScoreBoard():
-    pass
+    def __init__(self):
+        self.score = 0
+        self.number_width = self.number_images[0].get_width()
+        self.number_height = self.number_images[1].get_height()
+
+    def draw(self, screen):
+        score_string = "%05d" % self.score
+        score_image = pygame.Surface((self.number_width * 5, self.number_height)).convert()
+        score_image = image_colorkey(score_image, -1)
+
+        for i in range(5):
+            score_image.blit(self.number_images[int(score_string[i])], (i * self.number_width, 0))
+
+        screen.blit(self.score_label, (10, 10))
+        screen.blit(score_image, (80, 10))
+
+    def add_score(self, x):
+        self.score += x
 
 def image_colorkey(image, colorkey):
     if colorkey is not None:
