@@ -1,21 +1,25 @@
 # pygame
 Python Training Game
-- helicopter
+- Helicopter
 
 <img src="helicopter/helicopter_.png" width="400px">
 
-- breakout
+- Breakout
 
 <img src="breakout/breakout.png" width="400px">
 
-- pong
+- Pong
 
 <img src="pong/pong.png" width="400px">
 
-- rader
+- Rader
 
 <img src="rader/rader.png" width="400px">
 
-- invader
+- Invader
 
 <img src="invader/invader.png" width="400px">
+
+- Strikers 1945
+
+<img src="strikers/1945.png" width="400px">
