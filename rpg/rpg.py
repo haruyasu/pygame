@@ -4,6 +4,23 @@ import sys
 import os
 
 SCR_RECT = Rect(0, 0, 640, 480)
+ROW,COL = 15, 20
+GS = 32
+map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
 
 def load_image(filename, colorkey=None):
     filename = os.path.join("data", filename)
@@ -23,24 +40,34 @@ def load_image(filename, colorkey=None):
 
     return image
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode(SCR_RECT.size)
-    pygame.display.set_caption("RPG")
+def draw_map(screen):
+    for r in range(ROW):
+        for c in range(COL):
+            if map[r][c] == 0:
+                screen.blit(grassImg, (c * GS, r * GS))
+            elif map[r][c] == 1:
+                screen.blit(waterImg, (c * GS, r * GS))
 
-    playerImg = load_image("player1.png", -1)
+# def main():
+pygame.init()
+screen = pygame.display.set_mode(SCR_RECT.size)
+pygame.display.set_caption("RPG")
 
-    while True:
-        screen.fill((0, 0, 255))
-        screen.blit(playerImg, (0, 0))
-        pygame.display.update()
+playerImg = load_image("player1.png", -1)
+grassImg = load_image("grass.png")
+waterImg = load_image("water.png")
 
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                sys.exit()
+while True:
+    draw_map(screen)
+    screen.blit(playerImg, (0, 0))
+    pygame.display.update()
 
-            if event.type == KEYDOWN and event.key == K_ESCAPE:
-                sys.exit()
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            sys.exit()
 
-if __name__ == '__main__':
-    main()
+        if event.type == KEYDOWN and event.key == K_ESCAPE:
+            sys.exit()
+
+# if __name__ == '__main__':
+#     main()
