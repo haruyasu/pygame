@@ -48,6 +48,15 @@ def draw_map(screen):
             elif map[r][c] == 1:
                 screen.blit(waterImg, (c * GS, r * GS))
 
+def is_movable(x, y):
+    if x < 0 or x > COL - 1 or y < 0 or y > ROW - 1:
+        return False
+
+    if map[y][x] == 1:
+        return False
+
+    return True
+
 # def main():
 pygame.init()
 screen = pygame.display.set_mode(SCR_RECT.size)
@@ -57,9 +66,11 @@ playerImg = load_image("player1.png", -1)
 grassImg = load_image("grass.png")
 waterImg = load_image("water.png")
 
+x, y = 1, 1
+
 while True:
     draw_map(screen)
-    screen.blit(playerImg, (0, 0))
+    screen.blit(playerImg, (x * GS, y * GS))
     pygame.display.update()
 
     for event in pygame.event.get():
@@ -68,6 +79,19 @@ while True:
 
         if event.type == KEYDOWN and event.key == K_ESCAPE:
             sys.exit()
+
+        if event.type == KEYDOWN and event.key == K_DOWN:
+            if is_movable(x, y + 1):
+                y += 1
+        if event.type == KEYDOWN and event.key == K_LEFT:
+            if is_movable(x - 1, y):
+                x -= 1
+        if event.type == KEYDOWN and event.key == K_RIGHT:
+            if is_movable(x + 1, y):
+                x += 1
+        if event.type == KEYDOWN and event.key == K_UP:
+            if is_movable(x, y - 1):
+                y -= 1
 
 # if __name__ == '__main__':
 #     main()
