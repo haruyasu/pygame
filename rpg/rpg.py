@@ -40,6 +40,18 @@ def load_image(filename, colorkey=None):
 
     return image
 
+def split_image(image):
+    imageList = []
+
+    for i in range(0, 128, GS):
+        surface = pygame.Surface((GS, GS))
+        surface.blit(image, (0, 0), (i, 0, GS, GS))
+        surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
+        surface.convert()
+        imageList.append(surface)
+
+    return imageList
+
 def draw_map(screen):
     for r in range(ROW):
         for c in range(COL):
@@ -62,13 +74,21 @@ pygame.init()
 screen = pygame.display.set_mode(SCR_RECT.size)
 pygame.display.set_caption("RPG")
 
-playerImg = load_image("player1.png", -1)
+playerImgList = split_image(load_image("player4.png"))
 grassImg = load_image("grass.png")
 waterImg = load_image("water.png")
 
 x, y = 1, 1
+animcycle = 24
+frame = 0
+
+clock = pygame.time.Clock()
 
 while True:
+    clock.tick(60)
+
+    frame += 1
+    playerImg = playerImgList[frame / animcycle % 4]
     draw_map(screen)
     screen.blit(playerImg, (x * GS, y * GS))
     pygame.display.update()
