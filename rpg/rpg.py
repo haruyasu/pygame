@@ -6,6 +6,7 @@ import os
 SCR_RECT = Rect(0, 0, 640, 480)
 ROW,COL = 15, 20
 GS = 32
+DOWN, LEFT, RIGHT, UP = 0, 1, 2, 3
 map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -44,11 +45,12 @@ def split_image(image):
     imageList = []
 
     for i in range(0, 128, GS):
-        surface = pygame.Surface((GS, GS))
-        surface.blit(image, (0, 0), (i, 0, GS, GS))
-        surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
-        surface.convert()
-        imageList.append(surface)
+        for j in range(0, 128, GS):
+            surface = pygame.Surface((GS, GS))
+            surface.blit(image, (0, 0), (j, i, GS, GS))
+            surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
+            surface.convert()
+            imageList.append(surface)
 
     return imageList
 
@@ -74,11 +76,12 @@ pygame.init()
 screen = pygame.display.set_mode(SCR_RECT.size)
 pygame.display.set_caption("RPG")
 
-playerImgList = split_image(load_image("player4.png"))
+playerImgList = split_image(load_image("player.png"))
 grassImg = load_image("grass.png")
 waterImg = load_image("water.png")
 
 x, y = 1, 1
+direction = DOWN
 animcycle = 24
 frame = 0
 
@@ -88,7 +91,7 @@ while True:
     clock.tick(60)
 
     frame += 1
-    playerImg = playerImgList[frame / animcycle % 4]
+    playerImg = playerImgList[direction * 4 + frame / animcycle % 4]
     draw_map(screen)
     screen.blit(playerImg, (x * GS, y * GS))
     pygame.display.update()
@@ -101,15 +104,19 @@ while True:
             sys.exit()
 
         if event.type == KEYDOWN and event.key == K_DOWN:
+            direction = DOWN
             if is_movable(x, y + 1):
                 y += 1
         if event.type == KEYDOWN and event.key == K_LEFT:
+            direction = LEFT
             if is_movable(x - 1, y):
                 x -= 1
         if event.type == KEYDOWN and event.key == K_RIGHT:
+            direction = RIGHT
             if is_movable(x + 1, y):
                 x += 1
         if event.type == KEYDOWN and event.key == K_UP:
+            direction = UP
             if is_movable(x, y - 1):
                 y -= 1
 
