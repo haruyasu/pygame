@@ -4,24 +4,44 @@ import sys
 import os
 
 SCR_RECT = Rect(0, 0, 640, 480)
-ROW,COL = 15, 20
 GS = 32
 DOWN, LEFT, RIGHT, UP = 0, 1, 2, 3
-map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode(SCR_RECT.size)
+    pygame.display.set_caption("RPG")
+    Map.images[0] = load_image("grass.png")
+    Map.images[1] = load_image("water.png")
+    map = Map()
+    player = Player("player", (1, 1), DOWN)
+    clock = pygame.time.Clock()
+
+    while True:
+        clock.tick(60)
+        player.update()
+        map.draw(screen)
+        player.draw(screen)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                sys.exit()
+
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                sys.exit()
+
+            if event.type == KEYDOWN and event.key == K_DOWN:
+                player.move(DOWN, map)
+
+            if event.type == KEYDOWN and event.key == K_LEFT:
+                player.move(LEFT, map)
+
+            if event.type == KEYDOWN and event.key == K_RIGHT:
+                player.move(RIGHT, map)
+
+            if event.type == KEYDOWN and event.key == K_UP:
+                player.move(UP, map)
 
 def load_image(filename, colorkey=None):
     filename = os.path.join("data", filename)
@@ -54,71 +74,80 @@ def split_image(image):
 
     return imageList
 
-def draw_map(screen):
-    for r in range(ROW):
-        for c in range(COL):
-            if map[r][c] == 0:
-                screen.blit(grassImg, (c * GS, r * GS))
-            elif map[r][c] == 1:
-                screen.blit(waterImg, (c * GS, r * GS))
+class Map:
+    row,col = 15,20
+    images = [None] * 256
 
-def is_movable(x, y):
-    if x < 0 or x > COL - 1 or y < 0 or y > ROW - 1:
-        return False
+    map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
 
-    if map[y][x] == 1:
-        return False
+    def draw(self, screen):
+        for r in range(self.row):
+            for c in range(self.col):
+                screen.blit(self.images[self.map[r][c]], (c * GS, r * GS))
 
-    return True
+    def is_movable(self, x, y):
+        if x < 0 or x > self.col - 1 or y < 0 or y > self.row - 1:
+            return False
 
-# def main():
-pygame.init()
-screen = pygame.display.set_mode(SCR_RECT.size)
-pygame.display.set_caption("RPG")
+        if self.map[y][x] == 1:
+            return False
 
-playerImgList = split_image(load_image("player.png"))
-grassImg = load_image("grass.png")
-waterImg = load_image("water.png")
+        return True
 
-x, y = 1, 1
-direction = DOWN
-animcycle = 24
-frame = 0
+class Player:
+    animcycle = 24
+    frame = 0
 
-clock = pygame.time.Clock()
+    def __init__(self, name, pos, dir):
+        self.name = name
+        self.images = split_image(load_image("%s.png" % name))
+        self.image = self.images[0]
+        self.x, self.y = pos[0], pos[1]
+        self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+        self.direction = dir
 
-while True:
-    clock.tick(60)
+    def update(self):
+        self.frame += 1
+        self.image = self.images[self.direction * 4 + self.frame / self.animcycle % 4]
 
-    frame += 1
-    playerImg = playerImgList[direction * 4 + frame / animcycle % 4]
-    draw_map(screen)
-    screen.blit(playerImg, (x * GS, y * GS))
-    pygame.display.update()
+    def move(self, dir, map):
+        if dir == DOWN:
+            self.direction = DOWN
+            if map.is_movable(self.x, self.y + 1):
+                self.y += 1
+                self.rect.top += GS
+        elif dir == LEFT:
+            self.direction = LEFT
+            if map.is_movable(self.x - 1, self.y):
+                self.x -= 1
+                self.rect.left -= GS
+        elif dir == RIGHT:
+            self.direction = RIGHT
+            if map.is_movable(self.x + 1, self.y):
+                self.x += 1
+                self.rect.left += GS
+        elif dir == UP:
+            self.direction = UP
+            if map.is_movable(self.x, self.y - 1):
+                self.y -= 1
+                self.rect.top -= GS
 
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            sys.exit()
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
-        if event.type == KEYDOWN and event.key == K_ESCAPE:
-            sys.exit()
-
-        if event.type == KEYDOWN and event.key == K_DOWN:
-            direction = DOWN
-            if is_movable(x, y + 1):
-                y += 1
-        if event.type == KEYDOWN and event.key == K_LEFT:
-            direction = LEFT
-            if is_movable(x - 1, y):
-                x -= 1
-        if event.type == KEYDOWN and event.key == K_RIGHT:
-            direction = RIGHT
-            if is_movable(x + 1, y):
-                x += 1
-        if event.type == KEYDOWN and event.key == K_UP:
-            direction = UP
-            if is_movable(x, y - 1):
-                y -= 1
-
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
