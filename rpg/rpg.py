@@ -13,15 +13,19 @@ def main():
     pygame.display.set_caption("RPG")
     Map.images[0] = load_image("grass.png")
     Map.images[1] = load_image("water.png")
-    map = Map("test")
+    Map.images[2] = load_image("forest.png")
+    Map.images[3] = load_image("hill.png")
+    Map.images[4] = load_image("mountain.png")
+    map = Map("test2")
     player = Player("player", (1, 1), DOWN)
     clock = pygame.time.Clock()
 
     while True:
         clock.tick(60)
         player.update()
-        map.draw(screen)
-        player.draw(screen)
+        offset = calc_offset(player)
+        map.draw(screen, offset)
+        player.draw(screen, offset)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -42,6 +46,11 @@ def main():
 
             if event.type == KEYDOWN and event.key == K_UP:
                 player.move(UP, map)
+
+def calc_offset(player):
+    offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
+    offsety = player.rect.topleft[1] - SCR_RECT.height / 2
+    return offsetx, offsety
 
 def load_image(filename, colorkey=None):
     filename = os.path.join("data", filename)
@@ -83,16 +92,25 @@ class Map:
         self.map = []
         self.load()
 
-    def draw(self, screen):
-        for r in range(self.row):
-            for c in range(self.col):
-                screen.blit(self.images[self.map[r][c]], (c * GS, r * GS))
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        startx = offsetx / GS
+        endx = startx + SCR_RECT.width / GS + 1
+        starty = offsety / GS
+        endy = starty + SCR_RECT.height / GS + 1
+
+        for y in range(starty, endy):
+            for x in range(startx, endx):
+                if x < 0 or y < 0 or x > self.col - 1 or y > self.row - 1:
+                    screen.blit(self.images[self.default], (x * GS - offsetx, y * GS - offsety))
+                else:
+                    screen.blit(self.images[self.map[y][x]], (x * GS - offsetx, y * GS - offsety))
 
     def is_movable(self, x, y):
         if x < 0 or x > self.col - 1 or y < 0 or y > self.row - 1:
             return False
 
-        if self.map[y][x] == 1:
+        if self.map[y][x] == 1 or self.map[y][x] == 4:
             return False
 
         return True
@@ -103,7 +121,8 @@ class Map:
         lines = fp.readlines()
         row_str, col_str = lines[0].split()
         self.row, self.col = int(row_str), int(col_str)
-        for line in lines[1:]:
+        self.default = int(lines[1])
+        for line in lines[2:]:
             line = line.rstrip()
             self.map.append([int(x) for x in list(line)])
         fp.close()
@@ -146,8 +165,11 @@ class Player:
                 self.y -= 1
                 self.rect.top -= GS
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
 
 if __name__ == '__main__':
     main()
