@@ -13,7 +13,7 @@ def main():
     pygame.display.set_caption("RPG")
     Map.images[0] = load_image("grass.png")
     Map.images[1] = load_image("water.png")
-    map = Map()
+    map = Map("test")
     player = Player("player", (1, 1), DOWN)
     clock = pygame.time.Clock()
 
@@ -75,24 +75,13 @@ def split_image(image):
     return imageList
 
 class Map:
-    row,col = 15,20
     images = [None] * 256
-
-    map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
+    def __init__(self, name):
+        self.name = name
+        self.row = -1
+        self.col = -1
+        self.map = []
+        self.load()
 
     def draw(self, screen):
         for r in range(self.row):
@@ -107,6 +96,17 @@ class Map:
             return False
 
         return True
+
+    def load(self):
+        file = os.path.join("data", self.name + ".map")
+        fp = open(file)
+        lines = fp.readlines()
+        row_str, col_str = lines[0].split()
+        self.row, self.col = int(row_str), int(col_str)
+        for line in lines[1:]:
+            line = line.rstrip()
+            self.map.append([int(x) for x in list(line)])
+        fp.close()
 
 class Player:
     animcycle = 24
