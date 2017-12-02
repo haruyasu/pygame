@@ -22,7 +22,7 @@ def main():
 
     while True:
         clock.tick(60)
-        player.update()
+        player.update(map)
         offset = calc_offset(player)
         map.draw(screen, offset)
         player.draw(screen, offset)
@@ -35,17 +35,6 @@ def main():
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 sys.exit()
 
-            if event.type == KEYDOWN and event.key == K_DOWN:
-                player.move(DOWN, map)
-
-            if event.type == KEYDOWN and event.key == K_LEFT:
-                player.move(LEFT, map)
-
-            if event.type == KEYDOWN and event.key == K_RIGHT:
-                player.move(RIGHT, map)
-
-            if event.type == KEYDOWN and event.key == K_UP:
-                player.move(UP, map)
 
 def calc_offset(player):
     offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
@@ -128,6 +117,7 @@ class Map:
         fp.close()
 
 class Player:
+    speed = 4
     animcycle = 24
     frame = 0
 
@@ -137,33 +127,42 @@ class Player:
         self.image = self.images[0]
         self.x, self.y = pos[0], pos[1]
         self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+        self.vx, self.vy = 0, 0
+        self.moving = False
         self.direction = dir
 
-    def update(self):
+    def update(self, map):
+        if self.moving == True:
+            self.rect.move_ip(self.vx, self.vy)
+            if self.rect.left % GS == 0 and self.rect.top % GS == 0:
+                self.moving = False
+                self.x = self.rect.left / GS
+                self.y = self.rect.top / GS
+        else:
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_DOWN]:
+                self.direction = DOWN
+                if map.is_movable(self.x, self.y + 1):
+                    self.vx, self.vy = 0, self.speed
+                    self.moving = True
+            elif pressed_keys[K_LEFT]:
+                self.direction = LEFT
+                if map.is_movable(self.x - 1, self.y):
+                    self.vx, self.vy = -self.speed, 0
+                    self.moving = True
+            elif pressed_keys[K_RIGHT]:
+                self.direction = RIGHT
+                if map.is_movable(self.x + 1, self.y):
+                    self.vx, self.vy = self.speed, 0
+                    self.moving = True
+            elif pressed_keys[K_UP]:
+                self.direction = UP
+                if map.is_movable(self.x, self.y - 1):
+                    self.vx, self.vy = 0, -self.speed
+                    self.moving = True
+
         self.frame += 1
         self.image = self.images[self.direction * 4 + self.frame / self.animcycle % 4]
-
-    def move(self, dir, map):
-        if dir == DOWN:
-            self.direction = DOWN
-            if map.is_movable(self.x, self.y + 1):
-                self.y += 1
-                self.rect.top += GS
-        elif dir == LEFT:
-            self.direction = LEFT
-            if map.is_movable(self.x - 1, self.y):
-                self.x -= 1
-                self.rect.left -= GS
-        elif dir == RIGHT:
-            self.direction = RIGHT
-            if map.is_movable(self.x + 1, self.y):
-                self.x += 1
-                self.rect.left += GS
-        elif dir == UP:
-            self.direction = UP
-            if map.is_movable(self.x, self.y - 1):
-                self.y -= 1
-                self.rect.top -= GS
 
     def draw(self, screen, offset):
         offsetx, offsety = offset
