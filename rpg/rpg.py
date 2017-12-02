@@ -1,16 +1,23 @@
 import pygame
 from pygame.locals import *
-import sys
-import os
+import sys, random, os
 
 SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
 DOWN, LEFT, RIGHT, UP = 0, 1, 2, 3
+STOP, MOVE = 0, 1
+PROB_MOVE = 0.005
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCR_RECT.size)
     pygame.display.set_caption("RPG")
+
+    Character.images["player"] = split_image(load_image("player.png"))
+    Character.images["king"] = split_image(load_image("king.png"))
+    Character.images["minister"] = split_image(load_image("minister.png"))
+    Character.images["soldier"] = split_image(load_image("soldier.png"))
+
     Map.images[0] = load_image("grass.png")
     Map.images[1] = load_image("water.png")
     Map.images[2] = load_image("forest.png")
@@ -18,14 +25,22 @@ def main():
     Map.images[4] = load_image("mountain.png")
     map = Map("test2")
     player = Player("player", (1, 1), DOWN)
+    king = Character("king", (2, 1), DOWN, STOP)
+    minister = Character("minister", (3, 1), DOWN, MOVE)
+    soldier = Character("soldier", (4, 1), DOWN, MOVE)
+
+    map.add_chara(player)
+    map.add_chara(king)
+    map.add_chara(minister)
+    map.add_chara(soldier)
+
     clock = pygame.time.Clock()
 
     while True:
         clock.tick(60)
-        player.update(map)
+        map.update()
         offset = calc_offset(player)
         map.draw(screen, offset)
-        player.draw(screen, offset)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -34,7 +49,6 @@ def main():
 
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 sys.exit()
-
 
 def calc_offset(player):
     offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
@@ -79,7 +93,15 @@ class Map:
         self.row = -1
         self.col = -1
         self.map = []
+        self.charas = []
         self.load()
+
+    def add_chara(self, chara):
+        self.charas.append(chara)
+
+    def update(self):
+        for chara in self.charas:
+            chara.update(self)
 
     def draw(self, screen, offset):
         offsetx, offsety = offset
@@ -95,12 +117,19 @@ class Map:
                 else:
                     screen.blit(self.images[self.map[y][x]], (x * GS - offsetx, y * GS - offsety))
 
+        for chara in self.charas:
+            chara.draw(screen, offset)
+
     def is_movable(self, x, y):
         if x < 0 or x > self.col - 1 or y < 0 or y > self.row - 1:
             return False
 
         if self.map[y][x] == 1 or self.map[y][x] == 4:
             return False
+
+        for chara in self.charas:
+            if chara.x == x and chara.y == y:
+                return False
 
         return True
 
@@ -116,20 +145,61 @@ class Map:
             self.map.append([int(x) for x in list(line)])
         fp.close()
 
-class Player:
+
+class Character:
     speed = 4
     animcycle = 24
     frame = 0
+    images = {}
 
-    def __init__(self, name, pos, dir):
+    def __init__(self, name, pos, dir, movetype):
         self.name = name
-        self.images = split_image(load_image("%s.png" % name))
-        self.image = self.images[0]
+        self.image = self.images[name][0]
         self.x, self.y = pos[0], pos[1]
         self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
         self.vx, self.vy = 0, 0
         self.moving = False
         self.direction = dir
+        self.movetype = movetype
+
+    def update(self, map):
+        if self.moving == True:
+            self.rect.move_ip(self.vx, self.vy)
+            if self.rect.left % GS == 0 and self.rect.top % GS == 0:
+                self.moving = False
+                self.x = self.rect.left / GS
+                self.y = self.rect.top / GS
+        elif self.movetype == MOVE and random.random() < PROB_MOVE:
+            self.direction = random.randint(0, 3)
+            if self.direction == DOWN:
+                if map.is_movable(self.x, self.y + 1):
+                    self.vx, self.vy = 0, self.speed
+                    self.moving = True
+            elif self.direction == LEFT:
+                if map.is_movable(self.x - 1, self.y):
+                    self.vx, self.vy = -self.speed, 0
+                    self.moving = True
+            elif self.direction == RIGHT:
+                if map.is_movable(self.x + 1, self.y):
+                    self.vx, self.vy = self.speed, 0
+                    self.moving = True
+            elif self.direction == UP:
+                if map.is_movable(self.x, self.y - 1):
+                    self.vx, self.vy = 0, -self.speed
+                    self.moving = True
+
+        self.frame += 1
+        self.image = self.images[self.name][self.direction * 4 + self.frame / self.animcycle % 4]
+
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
+
+class Player(Character):
+    def __init__(self, name, pos, dir):
+        Character.__init__(self, name, pos, dir, False)
 
     def update(self, map):
         if self.moving == True:
@@ -162,13 +232,7 @@ class Player:
                     self.moving = True
 
         self.frame += 1
-        self.image = self.images[self.direction * 4 + self.frame / self.animcycle % 4]
-
-    def draw(self, screen, offset):
-        offsetx, offsety = offset
-        px = self.rect.topleft[0]
-        py = self.rect.topleft[1]
-        screen.blit(self.image, (px - offsetx, py - offsety))
+        self.image = self.images[self.name][self.direction * 4 + self.frame / self.animcycle % 4]
 
 if __name__ == '__main__':
     main()
