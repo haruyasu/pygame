@@ -23,17 +23,10 @@ def main():
     Map.images[2] = load_image("forest.png")
     Map.images[3] = load_image("hill.png")
     Map.images[4] = load_image("mountain.png")
+
     map = Map("test2")
     player = Player("player", (1, 1), DOWN)
-    king = Character("king", (2, 1), DOWN, STOP)
-    minister = Character("minister", (3, 1), DOWN, MOVE)
-    soldier = Character("soldier", (4, 1), DOWN, MOVE)
-
     map.add_chara(player)
-    map.add_chara(king)
-    map.add_chara(minister)
-    map.add_chara(soldier)
-
     clock = pygame.time.Clock()
 
     while True:
@@ -145,6 +138,28 @@ class Map:
             self.map.append([int(x) for x in list(line)])
         fp.close()
 
+    def load_event(self):
+        file = os.path.join("data", self.name + ".evt")
+        fp = codecs.open(file, "r", "utf-8")
+
+        for line in fp:
+            line = line.rstrip()
+            if line.startwith("#"):
+                continue
+            data = line.split(',')
+            event_type = data[0]
+            if event_type == "CAHRA":
+                self.create_chara(data)
+        fp.close()
+
+    def create_chara(self, data):
+        name = data[1]
+        x, y = int(data[2]), int(data[3])
+        direction = int(data[4])
+        movetype = int(data[5])
+        message = data[6]
+        chara = Character(name, (x, y), direction, movetype, message)
+        self.charas.append(chara)
 
 class Character:
     speed = 4
@@ -152,7 +167,7 @@ class Character:
     frame = 0
     images = {}
 
-    def __init__(self, name, pos, dir, movetype):
+    def __init__(self, name, pos, dir, movetype, message):
         self.name = name
         self.image = self.images[name][0]
         self.x, self.y = pos[0], pos[1]
@@ -161,6 +176,7 @@ class Character:
         self.moving = False
         self.direction = dir
         self.movetype = movetype
+        self.message = message
 
     def update(self, map):
         if self.moving == True:
@@ -197,9 +213,12 @@ class Character:
         py = self.rect.topleft[1]
         screen.blit(self.image, (px - offsetx, py - offsety))
 
+    def __str__(self):
+        return "CHARA,%s,%d,%d,%d,%d,%s" % (self.name, self.x, self.y, self.direction, self.movetype, self.message)
+
 class Player(Character):
     def __init__(self, name, pos, dir):
-        Character.__init__(self, name, pos, dir, False)
+        Character.__init__(self, name, pos, dir, False, None)
 
     def update(self, map):
         if self.moving == True:
