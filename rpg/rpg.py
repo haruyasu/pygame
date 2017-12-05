@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-import sys, random, os
+import sys, random, os, codecs
 
 SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
@@ -27,13 +27,16 @@ def main():
     map = Map("test2")
     player = Player("player", (1, 1), DOWN)
     map.add_chara(player)
+    wnd = Window(Rect(140, 334, 360, 140))
     clock = pygame.time.Clock()
 
     while True:
         clock.tick(60)
-        map.update()
+        if not wnd.is_visible:
+            map.update()
         offset = calc_offset(player)
         map.draw(screen, offset)
+        wnd.draw(screen)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -42,6 +45,12 @@ def main():
 
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 sys.exit()
+
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                if wnd.is_visible:
+                    wnd.hide()
+                else:
+                    wnd.show()
 
 def calc_offset(player):
     offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
@@ -88,6 +97,7 @@ class Map:
         self.map = []
         self.charas = []
         self.load()
+        self.load_event()
 
     def add_chara(self, chara):
         self.charas.append(chara)
@@ -144,7 +154,7 @@ class Map:
 
         for line in fp:
             line = line.rstrip()
-            if line.startwith("#"):
+            if line.startswith("#"):
                 continue
             data = line.split(',')
             event_type = data[0]
@@ -252,6 +262,25 @@ class Player(Character):
 
         self.frame += 1
         self.image = self.images[self.name][self.direction * 4 + self.frame / self.animcycle % 4]
+
+class Window:
+    EDGE_WIDTH = 4
+    def __init__(self, rect):
+        self.rect = rect
+        self.inner_rect = self.rect.inflate(-self.EDGE_WIDTH * 2, -self.EDGE_WIDTH * 2)
+        self.is_visible = False
+
+    def draw(self, screen):
+        if self.is_visible == False:
+            return
+        pygame.draw.rect(screen, (255, 255, 255), self.rect, 0)
+        pygame.draw.rect(screen, (0, 0, 0), self.rect, 0)
+
+    def show(self):
+        self.is_visible = True
+
+    def hide(self):
+        self.is_visible = False
 
 if __name__ == '__main__':
     main()
