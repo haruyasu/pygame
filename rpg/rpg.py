@@ -28,6 +28,7 @@ def main():
     player = Player("player", (1, 1), DOWN)
     map.add_chara(player)
     wnd = Window(Rect(140, 334, 360, 140))
+    msg_engine = MessageEngine()
     clock = pygame.time.Clock()
 
     while True:
@@ -37,6 +38,16 @@ def main():
         offset = calc_offset(player)
         map.draw(screen, offset)
         wnd.draw(screen)
+
+        msg_engine.set_color(MessageEngine. WHITE)
+        # msg_engine.draw_string(screen, (0, 0), "aaaaaaaaaa")
+        # msg_engine.set_color(MessageEngine. RED)
+        # msg_engine.draw_string(screen, (30, 30), "you can display message")
+        # msg_engine.set_color(MessageEngine. GREEN)
+        # msg_engine.draw_string(screen, (60, 60), "but you can't use kanji")
+        # msg_engine.set_color(MessageEngine. BRUE)
+        # msg_engine.draw_string(screen, (30, 39), "you can read this message")
+
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -262,6 +273,47 @@ class Player(Character):
 
         self.frame += 1
         self.image = self.images[self.name][self.direction * 4 + self.frame / self.animcycle % 4]
+
+class MessageEngine:
+    FONT_WIDTH = 16
+    FONT_HEIGHT = 22
+    WHITE, RED, GREEN, BLUE = 0, 160, 320, 480
+
+    def __init__(self):
+        self.image = load_image("font.png", -1)
+        self.color = self.WHITE
+        self.kana2rect = {}
+        # self.create_hash()
+
+    def set_color(self, color):
+        self.color = color
+        if not self.color in [self.WHITE, self.RED, self.GREEN, self.BLUE]:
+            self.color = self.WHITE
+
+    def draw_character(self, screen, pos, ch):
+        x, y = pos
+        try:
+            rect = self.kana2rect[ch]
+            screen.blit(self.image, (x, y), (rect.x + self.color, rect.y, rect.width, rect.height))
+        except KeyError:
+            print "You can't display this message!!"
+            return
+
+    def draw_string(self, screen, pos, str):
+        x, y = pos
+        for i, ch in enumerate(str):
+            dx = x + self.FONT_WIDTH * i
+            self.draw_character(screen, (dx, y), ch)
+
+    def create_hash(self):
+        filepath = os.path.join("data", "kana2rect.dat")
+        fp = codecs.open(filepath, "r", "utf-8")
+        for line in fp.readline():
+            line = line.rstrip()
+            d = line.split(" ")
+            kana, x, y, w, h = d[0], int(d[1]), int(d[2]), int(d[3]), int(d[4])
+            self.kana2rect[kana] = Rect(x, y, w, h)
+        fp.close()
 
 class Window:
     EDGE_WIDTH = 4
