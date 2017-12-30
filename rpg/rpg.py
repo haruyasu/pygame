@@ -121,6 +121,14 @@ class Map:
         self.col = -1
         self.map = []
         self.charas = []
+        self.events = []
+        self.load()
+        self.load_event()
+
+    def create(self, dest_map):
+        self.name = dest_map
+        self.charas = []
+        self.events = []
         self.load()
         self.load_event()
 
@@ -139,27 +147,45 @@ class Map:
         endy = starty + SCR_RECT.height/GS + 1
         for y in range(starty, endy):
             for x in range(startx, endx):
-                if x < 0 or y < 0 or x > self.col-1 or y > self.row-1:
-                    screen.blit(self.images[self.default], (x*GS-offsetx,y*GS-offsety))
+                if x < 0 or y < 0 or x > self.col - 1 or y > self.row - 1:
+                    screen.blit(self.images[self.default], (x * GS - offsetx, y * GS - offsety))
                 else:
-                    screen.blit(self.images[self.map[y][x]], (x*GS-offsetx,y*GS-offsety))
+                    screen.blit(self.images[self.map[y][x]], (x * GS - offsetx, y * GS - offsety))
+
+        for event in self.events:
+            event.draw(screen, offset)
+
         for chara in self.charas:
             chara.draw(screen, offset)
 
     def is_movable(self, x, y):
         if x < 0 or x > self.col-1 or y < 0 or y > self.row-1:
             return False
+
         if self.movable_type[self.map[y][x]] == 0:
             return False
+
         for chara in self.charas:
             if chara.x == x and chara.y == y:
                 return False
+
+        for event in self.events:
+            if self.movable_type[event.mapchip] == 0:
+                if event.x == x and event.y == y:
+                    return False
+
         return True
 
     def get_chara(self, x, y):
         for chara in self.charas:
             if chara.x == x and chara.y == y:
                 return chara
+        return None
+
+    def get_event(self, x, y):
+        for event in self.events:
+            if event.x == x and event.y == y:
+                return event
         return None
 
     def load(self):
@@ -186,6 +212,8 @@ class Map:
             event_type = data[0]
             if event_type == "CHARA":
                 self.create_chara(data)
+            if event_type == "MOVE":
+                self.create_move(data)
         fp.close()
 
     def create_chara(self, data):
@@ -196,6 +224,14 @@ class Map:
         message = data[6]
         chara = Character(name, (x,y), direction, movetype, message)
         self.charas.append(chara)
+
+    def create_move(self, data):
+        x, y = int(data[1]), int(data[2])
+        mapchip = int(data[3])
+        dest_map = data[4]
+        dest_x, dest_y = int(data[5]), int(data[6])
+        move = MoveEvent((x, y), mapchip, dest_map, (dest_x, dest_y))
+        self.events.append(move)
 
 class Character:
     speed = 4
@@ -249,6 +285,11 @@ class Character:
         py = self.rect.topleft[1]
         screen.blit(self.image, (px - offsetx, py - offsety))
 
+    def set_pos(self, x, y, dir):
+        self.x, self.y = x, y
+        self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+        self.direction = dir
+
     def __str__(self):
         return "CHARA,%s,%d,%d,%d,%d,%s" % (self.name, self.x, self.y, self.direction, self.movetype, self.message)
 
@@ -263,6 +304,15 @@ class Player(Character):
                 self.moving = False
                 self.x = self.rect.left / GS
                 self.y = self.rect.top / GS
+
+                event = map.get_event(self.x, self.y)
+                if isinstance(event, MoveEvent):
+                    dest_map = event.dest_map
+                    dest_x = event.dest_x
+                    dest_y = event.dest_y
+                    map.create(dest_map)
+                    self.set_pos(dest_x, dest_y, DOWN)
+                    map.add_chara(self)
         else:
             pressed_keys = pygame.key.get_pressed()
             if pressed_keys[K_DOWN]:
@@ -469,6 +519,24 @@ class MessageWindow(Window):
             self.cur_page += 1
             self.cur_page = 0
             self.next_flag = False
+
+class MoveEvent():
+    def __init__(self, pos, mapchip, dest_map, dest_pos):
+        self.x, self.y = pos[0], pos[1]
+        self.mapchip = mapchip
+        self.dest_map = dest_map
+        self.dest_x, self.dest_y = dest_pos[0], dest_pos[1]
+        self.image = Map.images[self.mapchip]
+        self.rect = self.image.get_rect(topleft=(self.x *GS, self.y * GS))
+
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
+
+    def __str__(self):
+        return "MOVE, %d, %d, %d, %s, %d, %d" % (self.x, self.y, self.mapchip, self.dest_map, self.dest_x, self.dest_y)
 
 if __name__ == '__main__':
     main()
