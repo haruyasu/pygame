@@ -2,33 +2,26 @@
 # -*- coding: utf-8 -*-
 import pygame
 from pygame.locals import *
-import sys, random, os, codecs
+import sys, random, os, codecs, struct
 
 SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
 DOWN, LEFT, RIGHT, UP = 0, 1, 2, 3
 STOP, MOVE = 0, 1
 PROB_MOVE = 0.005
+TRANS_COLOR = (190, 179, 145)
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCR_RECT.size)
     pygame.display.set_caption("RPG")
 
-    Character.images["player"] = split_image(load_image("player.png"))
-    Character.images["king"] = split_image(load_image("king.png"))
-    Character.images["minister"] = split_image(load_image("minister.png"))
-    Character.images["soldier"] = split_image(load_image("soldier.png"))
-    Character.images["black_cat"] = split_image(load_image("black_cat.png"))
+    load_charachips("data", "charachip.dat")
 
-    Map.images[0] = load_image("grass.png")
-    Map.images[1] = load_image("water.png")
-    Map.images[2] = load_image("forest.png")
-    Map.images[3] = load_image("hill.png")
-    Map.images[4] = load_image("mountain.png")
+    load_mapchips("data", "mapchip.dat")
 
-    map = Map("test2")
-    player = Player("player", (1, 1), DOWN)
+    map = Map("field")
+    player = Player("blue_slime", (1, 1), DOWN)
     map.add_chara(player)
     msgwnd = MessageWindow(Rect(140, 334, 360, 140))
     clock = pygame.time.Clock()
@@ -37,10 +30,10 @@ def main():
         clock.tick(60)
         if not msgwnd.is_visible:
             map.update()
+        msgwnd.update()
         offset = calc_offset(player)
         map.draw(screen, offset)
         msgwnd.draw(screen)
-
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -60,17 +53,46 @@ def main():
                     else:
                         msgwnd.set("Nobody anymore!")
 
+def load_charachips(dir, file):
+    file = os.path.join(dir, file)
+    fp = open(file, "r")
+    for line in fp:
+        line = line.rstrip()
+        data = line.split(",")
+        chara_id = int(data[0])
+        chara_name = data[1]
+        Character.images[chara_name] = split_image(load_image("charachip", "%s.png" % chara_name))
+    fp.close()
+
+def load_mapchips(dir, file):
+    file = os.path.join(dir, file)
+    fp = open(file, "r")
+    for line in fp:
+        line = line.rstrip()
+        data = line.split(",")
+        mapchip_id = int(data[0])
+        mapchip_name = data[1]
+        movable = int(data[2])
+        transparent = int(data[3])
+
+        if transparent == 0:
+            Map.images.append(load_image("mapchip", "%s.png" % mapchip_name))
+        else:
+            Map.images.append(load_image("mapchip", "%s.png" % mapchip_name, TRANS_COLOR))
+        Map.movable_type.append(movable)
+    fp.close()
+
 def calc_offset(player):
     offsetx = player.rect.topleft[0] - SCR_RECT.width/2
     offsety = player.rect.topleft[1] - SCR_RECT.height/2
     return offsetx, offsety
 
-def load_image(filename, colorkey=None):
-    filename = os.path.join("data", filename)
+def load_image(dir, file, colorkey=None):
+    file = os.path.join(dir, file)
     try:
-        image = pygame.image.load(filename)
+        image = pygame.image.load(file)
     except pygame.error, message:
-        print "Cannot load image:", filename
+        print "Cannot load image:", file
         raise SystemExit, message
     image = image.convert()
     if colorkey is not None:
@@ -91,7 +113,8 @@ def split_image(image):
     return imageList
 
 class Map:
-    images = [None] * 256
+    images = []
+    movable_type = []
     def __init__(self, name):
         self.name = name
         self.row = -1
@@ -126,7 +149,7 @@ class Map:
     def is_movable(self, x, y):
         if x < 0 or x > self.col-1 or y < 0 or y > self.row-1:
             return False
-        if self.map[y][x] == 1 or self.map[y][x] == 4:
+        if self.movable_type[self.map[y][x]] == 0:
             return False
         for chara in self.charas:
             if chara.x == x and chara.y == y:
@@ -142,13 +165,15 @@ class Map:
     def load(self):
         file = os.path.join("data", self.name + ".map")
         fp = open(file)
-        lines = fp.readlines()
-        row_str, col_str = lines[0].split()
-        self.row, self.col = int(row_str), int(col_str)
-        self.default = int(lines[1])
-        for line in lines[2:]:
-            line = line.rstrip()
-            self.map.append([int(x) for x in list(line)])
+
+        self.row = struct.unpack("i", fp.read(struct.calcsize("i")))[0]
+        self.col = struct.unpack("i", fp.read(struct.calcsize("i")))[0]
+        self.default = struct.unpack("B", fp.read(struct.calcsize("B")))[0]
+        self.map = [[4 for c in range(self.col)] for r in range(self.row)]
+
+        for r in range(self.row):
+            for c in range(self.col):
+                self.map[r][c] = struct.unpack("B", fp.read(struct.calcsize("B")))[0]
         fp.close()
 
     def load_event(self):
@@ -296,7 +321,7 @@ class MessageEngine:
     WHITE, RED, GREEN, BLUE = 0, 160, 320, 480
 
     def __init__(self):
-        self.image = load_image("font.png", -1)
+        self.image = load_image("data", "font.png", -1)
         self.color = self.WHITE
         self.kana2rect = {}
         self.create_hash()
@@ -357,20 +382,29 @@ class MessageWindow(Window):
     MAX_CHARS_PER_PAGE = 20 * 3
     MAX_LINES = 30
     LINE_HEIGHT = 8
+    animcycle = 24
 
     def __init__(self, rect):
         Window.__init__(self, rect)
         self.text_rect = self.inner_rect.inflate(-32, -32)
         self.text = []
         self.cur_page = 0
-        self.max_page = 0
+        self.cur_pos = 0
+        self.next_flag = False
+        self.hide_flag = False
         self.msg_engine = MessageEngine()
-        self.cursor = load_image("cursor.png", -1)
+        self.cursor = load_image("data", "cursor.png", -1)
+        self.frame = 0
 
     def set(self, message):
+        self.cur_pos = 0
         self.cur_page = 0
+        self.next_flag = False
+        self.hide_flag = False
+
         self.text = [u'　'] * (self.MAX_LINES * self.MAX_CHARS_PER_LINE)
         p = 0
+
         for i in range(len(message)):
             ch = message[i]
             if ch == "/":
@@ -384,27 +418,57 @@ class MessageWindow(Window):
             else:
                 self.text[p] = ch
                 p += 1
-        self.max_page = p / self.MAX_CHARS_PER_PAGE
+        self.text[p] = "$"
         self.show()
+
+    def update(self):
+        if self.is_visible:
+            if self.next_flag == False:
+                self.cur_pos += 1
+                p = self.cur_page * self.MAX_CHARS_PER_PAGE + self.cur_pos
+
+                if self.text[p] == "/":
+                    self.cur_pos += self.MAX_CHARS_PER_LINE
+                    self.cur_pos = (self.cur_pos / self.MAX_CHARS_PER_LINE) * self.MAX_CHARS_PER_LINE
+                elif self.text[p] == "%":
+                    self.cur_pos += self.MAX_CHARS_PER_PAGE
+                    self.cur_pos = (self.cur_pos / self.MAX_CHARS_PER_PAGE) * self.MAX_CHARS_PER_PAGE
+                elif self.text[p] == "$":
+                    self.hide_flag = True
+
+                if self.cur_pos % self.MAX_CHARS_PER_PAGE == 0:
+                    self.next_flag = True
+        self.frame += 1
 
     def draw(self, screen):
         Window.draw(self, screen)
-        if self.is_visible == False: return
-        for i in range(self.MAX_CHARS_PER_PAGE):
+
+        if self.is_visible == False:
+            return
+
+        for i in range(self.cur_pos):
             ch = self.text[self.cur_page * self.MAX_CHARS_PER_PAGE + i]
-            if ch == "/" or ch == "%": continue
+            if ch == "/" or ch == "%" or ch == "$":
+                continue
+
             dx = self.text_rect[0] + MessageEngine.FONT_WIDTH * (i % self.MAX_CHARS_PER_LINE)
             dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * (i / self.MAX_CHARS_PER_LINE)
             self.msg_engine.draw_character(screen, (dx, dy), ch)
-        if self.cur_page < self.max_page:
-            dx = self.text_rect[0] + (self.MAX_CHARS_PER_LINE / 2) * MessageEngine.FONT_WIDTH - MessageEngine.FONT_WIDTH / 2
-            dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * 3
+
+        if (not self.hide_flag) and self.next_flag:
+            if self.frame / self.animcycle % 2 == 0:
+                dx = self.text_rect[0] + (self.MAX_CHARS_PER_LINE / 2) * MessageEngine.FONT_WIDTH - MessageEngine.FONT_WIDTH / 2
+                dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * 3
             screen.blit(self.cursor, (dx, dy))
 
     def next(self):
-        if self.cur_page == self.max_page:
+        if self.hide_flag:
             self.hide()
-        self.cur_page += 1
+
+        if self.next_flag:
+            self.cur_page += 1
+            self.cur_page = 0
+            self.next_flag = False
 
 if __name__ == '__main__':
     main()
