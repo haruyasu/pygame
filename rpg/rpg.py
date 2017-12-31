@@ -207,14 +207,23 @@ class Map:
         fp = codecs.open(file, "r", "utf-8")
         for line in fp:
             line = line.rstrip()
-            if line.startswith("#"): continue
+            if line.startswith("#"):
+                continue
             data = line.split(",")
             event_type = data[0]
-            if event_type == "CHARA":
+            if event_type == "BGM":
+                self.play_bgm(data)
+            elif event_type == "CHARA":
                 self.create_chara(data)
-            if event_type == "MOVE":
+            elif event_type == "MOVE":
                 self.create_move(data)
         fp.close()
+
+    def play_bgm(self, data):
+        bgm_file = "%s.mp3" % data[1]
+        bgm_file = os.path.join("bgm", bgm_file)
+        pygame.mixer.music.load(bgm_file)
+        pygame.mixer.music.play(-1)
 
     def create_chara(self, data):
         name = data[1]
