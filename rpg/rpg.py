@@ -11,11 +11,14 @@ STOP, MOVE = 0, 1
 PROB_MOVE = 0.005
 TRANS_COLOR = (190, 179, 145)
 
+sounds = {}
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCR_RECT.size)
     pygame.display.set_caption("RPG")
 
+    load_sounds("data", "sound.dat")
     load_charachips("data", "charachip.dat")
 
     load_mapchips("data", "mapchip.dat")
@@ -52,6 +55,17 @@ def main():
                         msgwnd.set(chara.message)
                     else:
                         msgwnd.set("Nobody anymore!")
+
+def load_sounds(dir, file):
+    file = os.path.join(dir, file)
+    fp = open(file, "r")
+    for line in fp:
+        line = line.rstrip()
+        data = line.split(",")
+        se_name = data[0]
+        se_file = os.path.join("se", data[1])
+        sounds[se_name] = pygame.mixer.Sound(se_file)
+    fp.close()
 
 def load_charachips(dir, file):
     file = os.path.join(dir, file)
@@ -316,6 +330,7 @@ class Player(Character):
 
                 event = map.get_event(self.x, self.y)
                 if isinstance(event, MoveEvent):
+                    sounds["step"].play()
                     dest_map = event.dest_map
                     dest_x = event.dest_x
                     dest_y = event.dest_y
