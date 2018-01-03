@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pygame
 from pygame.locals import *
@@ -97,8 +96,8 @@ def load_mapchips(dir, file):
     fp.close()
 
 def calc_offset(player):
-    offsetx = player.rect.topleft[0] - SCR_RECT.width/2
-    offsety = player.rect.topleft[1] - SCR_RECT.height/2
+    offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
+    offsety = player.rect.topleft[1] - SCR_RECT.height / 2
     return offsetx, offsety
 
 def load_image(dir, file, colorkey=None):
@@ -119,9 +118,9 @@ def split_image(image):
     imageList = []
     for i in range(0, 128, GS):
         for j in range(0, 128, GS):
-            surface = pygame.Surface((GS,GS))
-            surface.blit(image, (0,0), (j,i,GS,GS))
-            surface.set_colorkey(surface.get_at((0,0)), RLEACCEL)
+            surface = pygame.Surface((GS, GS))
+            surface.blit(image, (0, 0), (j, i, GS, GS))
+            surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
             surface.convert()
             imageList.append(surface)
     return imageList
