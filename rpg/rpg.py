@@ -19,13 +19,13 @@ def main():
 
     load_sounds("data", "sound.dat")
     load_charachips("data", "charachip.dat")
-
     load_mapchips("data", "mapchip.dat")
 
     map = Map("field")
     player = Player("blue_slime", (1, 1), DOWN)
     map.add_chara(player)
-    msgwnd = MessageWindow(Rect(140, 334, 360, 140))
+    msg_engine = MessageEngine()
+    msgwnd = MessageWindow(Rect(140, 334, 360, 140), msg_engine)
     clock = pygame.time.Clock()
 
     while True:
@@ -36,6 +36,7 @@ def main():
         offset = calc_offset(player)
         map.draw(screen, offset)
         msgwnd.draw(screen)
+        show_info(screen, msg_engine, player, map)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -54,6 +55,11 @@ def main():
                         msgwnd.set(chara.message)
                     else:
                         msgwnd.set("Nobody anymore!")
+
+def show_info(screen, msg_engine, player, map):
+    msg_engine.draw_string(screen, (10, 10), map.name.upper())
+    msg_engine.draw_string(screen, (10, 40), player.name.upper())
+    msg_engine.draw_string(screen, (10, 70), "%d_%d" % (player.x, player.y))
 
 def load_sounds(dir, file):
     file = os.path.join(dir, file)
