@@ -50,6 +50,19 @@ def main():
                 if msgwnd.is_visible:
                     msgwnd.next()
                 else:
+                    treasure = player.serch(map)
+                    if treasure != None:
+                        treasure.open()
+                        msgwnd.set("I got a %s" % treasure.item)
+                        map.remove_event(treasure)
+                        continue
+
+                    door = player.open(map)
+                    if door != None:
+                        door.open()
+                        map.remove_event(door)
+                        continue
+
                     chara = player.talk(map)
                     if chara != None:
                         msgwnd.set(chara.message)
@@ -207,14 +220,17 @@ class Map:
                 return event
         return None
 
+    def remove_event(self, event):
+        self.events.remove(event)
+
     def load(self):
         file = os.path.join("data", self.name + ".map")
-        fp = open(file)
+        fp = open(file, "rb")
 
         self.row = struct.unpack("i", fp.read(struct.calcsize("i")))[0]
         self.col = struct.unpack("i", fp.read(struct.calcsize("i")))[0]
         self.default = struct.unpack("B", fp.read(struct.calcsize("B")))[0]
-        self.map = [[4 for c in range(self.col)] for r in range(self.row)]
+        self.map = [[0 for c in range(self.col)] for r in range(self.row)]
 
         for r in range(self.row):
             for c in range(self.col):
@@ -236,6 +252,13 @@ class Map:
                 self.create_chara(data)
             elif event_type == "MOVE":
                 self.create_move(data)
+            elif event_type == "TREASURE":
+                self.create_treasure(data)
+            elif event_type == "DOOR":
+                self.create_door(data)
+            elif event_type == "OBJECT":
+                self.create_obj(data)
+
         fp.close()
 
     def play_bgm(self, data):
@@ -260,6 +283,23 @@ class Map:
         dest_x, dest_y = int(data[5]), int(data[6])
         move = MoveEvent((x, y), mapchip, dest_map, (dest_x, dest_y))
         self.events.append(move)
+
+    def create_treasure(self, data):
+        x, y = int(data[1]), int(data[2])
+        item = data[3]
+        treasure = Treasure((x, y), item)
+        self.events.append(treasure)
+
+    def create_door(self, data):
+        x, y = int(data[1]), int(data[2])
+        door = Door((x, y))
+        self.events.append(door)
+
+    def create_obj(self, data):
+        x, y = int(data[1]), int(data[2])
+        mapchip = int(data[3])
+        obj = Object((x, y), mapchip)
+        self.events.append(obj)
 
 class Character:
     speed = 4
@@ -394,6 +434,28 @@ class Player(Character):
             chara.update(map)
         return chara
 
+    def serch(self, map):
+        event = map.get_event(self.x, self.y)
+        if isinstance(event, Treasure):
+            return event
+        return None
+
+    def open(self, map):
+        nextx, nexty = self.x, self.y
+        if self.direction == DOWN:
+            nexty = self.y + 1
+        elif self.direction == LEFT:
+            nextx = self.x - 1
+        elif self.direction == RIGHT:
+            nextx = self.x + 1
+        elif self.direction == UP:
+            nexty = self.y - 1
+
+        event = map.get_event(nextx, nexty)
+        if isinstance(event, Door):
+            return event
+        return None
+
 class MessageEngine:
     FONT_WIDTH = 16
     FONT_HEIGHT = 22
@@ -463,7 +525,7 @@ class MessageWindow(Window):
     LINE_HEIGHT = 8
     animcycle = 24
 
-    def __init__(self, rect):
+    def __init__(self, rect, msg_engine):
         Window.__init__(self, rect)
         self.text_rect = self.inner_rect.inflate(-32, -32)
         self.text = []
@@ -471,7 +533,7 @@ class MessageWindow(Window):
         self.cur_pos = 0
         self.next_flag = False
         self.hide_flag = False
-        self.msg_engine = MessageEngine()
+        self.msg_engine = msg_engine
         self.cursor = load_image("data", "cursor.png", -1)
         self.frame = 0
 
