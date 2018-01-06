@@ -629,5 +629,60 @@ class MoveEvent():
     def __str__(self):
         return "MOVE, %d, %d, %d, %s, %d, %d" % (self.x, self.y, self.mapchip, self.dest_map, self.dest_x, self.dest_y)
 
+class Treasure():
+    def __init__(self, pos, item):
+        self.x, self.y = pos[0], pos[1]
+        self.mapchip = 46
+        self.image = Map.images[self.mapchip]
+        self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+        self.item = item
+
+    def open(self):
+        sounds["treasure"].play()
+
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
+
+    def __str__(self):
+        return "TREASURE, %d, %d, %d" % (self.x, self.y, self.item)
+
+class Door:
+    def __init__(self, pos):
+        self.x, self.y = pos[0], pos[1]
+        self.mapchip = 45
+        self.image = Map.images[self.mapchip]
+        self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+
+    def open(self):
+        sounds["door"].play()
+
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
+
+    def __str__(self):
+        return "DOOR, %d, %d" % (self.x, self.y)
+
+class Object:
+    def __init__(self, pos, mapchip):
+        self.x, self.y = pos[0], pos[1]
+        self.mapchip = mapchip
+        self.image = Map.images[self.mapchip]
+        self.rect = self.image.get_rect(topleft=(self.x * GS, self.y * GS))
+
+    def draw(self, screen, offset):
+        offsetx, offsety = offset
+        px = self.rect.topleft[0]
+        py = self.rect.topleft[1]
+        screen.blit(self.image, (px - offsetx, py - offsety))
+
+    def __str__(self):
+        return "OBJECT, %d, %d, %d" % (self.x, self.y, mapchip)
+
 if __name__ == '__main__':
     main()
