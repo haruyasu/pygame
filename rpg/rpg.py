@@ -26,16 +26,18 @@ def main():
     map.add_chara(player)
     msg_engine = MessageEngine()
     msgwnd = MessageWindow(Rect(140, 334, 360, 140), msg_engine)
+    cmdwnd = CommandWindow(Rect(16, 16, 216, 160), msg_engine)
     clock = pygame.time.Clock()
 
     while True:
         clock.tick(60)
-        if not msgwnd.is_visible:
+        if not msgwnd.is_visible and not cmdwnd.is_visible:
             map.update()
         msgwnd.update()
         offset = calc_offset(player)
         map.draw(screen, offset)
         msgwnd.draw(screen)
+        cmdwnd.draw(screen)
         show_info(screen, msg_engine, player, map)
         pygame.display.update()
 
@@ -47,27 +49,83 @@ def main():
                 sys.exit()
 
             if event.type == KEYDOWN and event.key == K_SPACE:
-                if msgwnd.is_visible:
-                    msgwnd.next()
-                else:
-                    treasure = player.serch(map)
-                    if treasure != None:
-                        treasure.open()
-                        msgwnd.set("I got a %s" % treasure.item)
-                        map.remove_event(treasure)
-                        continue
+                sys.exit()
 
-                    door = player.open(map)
-                    if door != None:
-                        door.open()
-                        map.remove_event(door)
-                        continue
+            if cmdwnd.is_visible:
+                cmdwnd_handler(event, cmdwnd, msgwnd, player, map)
+            elif msgwnd.is_visible:
+                msgwnd.next()
+            else:
+                if event.type == KEYDOWN and event.key == K_SPACE:
+                    sounds["pi"].play()
+                    cmdwnd.show()
 
-                    chara = player.talk(map)
-                    if chara != None:
-                        msgwnd.set(chara.message)
-                    else:
-                        msgwnd.set("Nobody anymore!")
+def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
+    if  event.type == KEYDOWN and event.key == K_LEFT:
+        if cmdwnd.comand <= 3:
+            return
+        cmdwnd.command -= 4
+    elif  event.type == KEYDOWN and event.key == K_RIGHT:
+        if cmdwnd.comand >= 4:
+            return
+        cmdwnd.command += 4
+    elif  event.type == KEYUP and event.key == K_UP:
+        if cmdwnd.comand == 0 or cmdwnd.command == 4:
+            return
+        cmdwnd.command -= 1
+    elif  event.type == KEYDOWN and event.key == K_DOWN:
+        if cmdwnd.comand == 3 or cmdwnd.command == 7:
+            return
+        cmdwnd.command += 1
+
+    if event.type == KEYDOWN and event.key == K_SPACE:
+        if cmdwnd.command == CommandWindow.TALK:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            chara = player.talk(map)
+            if chara != None:
+                msgwnd.set(chara.message)
+            else:
+                msgwnd.set("Nobody there!")
+        elif cmdwnd.command == Commandwindw.STATUS:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            msgwnd.set("STATUS WINDOW")
+        elif cmdwnd.command == Commandwindw.EQUIPMENT:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            msgwnd.set("EQUIPMENT WINDOW")
+        elif cmdwnd.command == Commandwindw.DOOR:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            door = player.open(map)
+            if door != None:
+                door.open()
+                map.remove_event(door)
+            else:
+                msgwnd.set("No Door")
+        elif cmdwnd.command == Commandwindw.SPELL:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            msgwnd.set("SPELL WINDOW")
+        elif cmdwnd.command == Commandwindw.ITEM:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            msgwnd.set("ITEM WINDOW")
+        elif cmdwnd.command == Commandwindw.TACTICS:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            msgwnd.set("TACTICS WINDOW")
+        elif cmdwnd.command == Commandwindw.SEARCH:
+            sounds["pi"].play()
+            cmdwnd.hide()
+            treasure = player.search(map)
+            if treasure != None:
+                treasure.open()
+                msgwnd.set("GET %s" % treasure.item)
+                map.remove_event(treasure)
+            else:
+                msgwnd.set("CAN'T FIND")
 
 def show_info(screen, msg_engine, player, map):
     msg_engine.draw_string(screen, (10, 10), map.name.upper())
@@ -600,7 +658,7 @@ class MessageWindow(Window):
             if self.frame / self.animcycle % 2 == 0:
                 dx = self.text_rect[0] + (self.MAX_CHARS_PER_LINE / 2) * MessageEngine.FONT_WIDTH - MessageEngine.FONT_WIDTH / 2
                 dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * 3
-            screen.blit(self.cursor, (dx, dy))
+                screen.blit(self.cursor, (dx, dy))
 
     def next(self):
         if self.hide_flag:
