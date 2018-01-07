@@ -87,15 +87,15 @@ def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
                 msgwnd.set(chara.message)
             else:
                 msgwnd.set("Nobody there!")
-        elif cmdwnd.command == Commandwindw.STATUS:
+        elif cmdwnd.command == CommandWindow.STATUS:
             sounds["pi"].play()
             cmdwnd.hide()
             msgwnd.set("STATUS WINDOW")
-        elif cmdwnd.command == Commandwindw.EQUIPMENT:
+        elif cmdwnd.command == CommandWindow.EQUIPMENT:
             sounds["pi"].play()
             cmdwnd.hide()
             msgwnd.set("EQUIPMENT WINDOW")
-        elif cmdwnd.command == Commandwindw.DOOR:
+        elif cmdwnd.command == CommandWindow.DOOR:
             sounds["pi"].play()
             cmdwnd.hide()
             door = player.open(map)
@@ -104,19 +104,19 @@ def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
                 map.remove_event(door)
             else:
                 msgwnd.set("No Door")
-        elif cmdwnd.command == Commandwindw.SPELL:
+        elif cmdwnd.command == CommandWindow.SPELL:
             sounds["pi"].play()
             cmdwnd.hide()
             msgwnd.set("SPELL WINDOW")
-        elif cmdwnd.command == Commandwindw.ITEM:
+        elif cmdwnd.command == CommandWindow.ITEM:
             sounds["pi"].play()
             cmdwnd.hide()
             msgwnd.set("ITEM WINDOW")
-        elif cmdwnd.command == Commandwindw.TACTICS:
+        elif cmdwnd.command == CommandWindow.TACTICS:
             sounds["pi"].play()
             cmdwnd.hide()
             msgwnd.set("TACTICS WINDOW")
-        elif cmdwnd.command == Commandwindw.SEARCH:
+        elif cmdwnd.command == CommandWindow.SEARCH:
             sounds["pi"].play()
             cmdwnd.hide()
             treasure = player.search(map)
@@ -668,6 +668,42 @@ class MessageWindow(Window):
             self.cur_page += 1
             self.cur_page = 0
             self.next_flag = False
+
+class CommandWindow(Window):
+    LINE_HEIGHT = 8
+    TALK, STATUS, EQUIPMENT, DOOR, SPELL, ITEM, TACTICS, SEARCH = range(0, 8)
+    COMMAND = ["TALK", "STATUS", "EQUIPMENT", "DOOR", "SPELL", "ITEM", "TACTICS", "SEARCH"]
+
+    def __init__(self, rect, msg_engine):
+        Window.__init__(self, rect)
+        self.text_rect = self.inner_rect.inflate(-32, -32)
+        self.command = self.TALK
+        self.msg_engine = msg_engine
+        self.cursor = load_image("data", "cursor2.png", -1)
+        self.frame = 0
+
+    def draw(self, screen):
+        Window.draw(self, screen)
+        if self.is_visible == False:
+            return
+
+        for i in range(0, 4):
+            dx = self.text_rect[0] + MessageEngine.FONT_WIDTH
+            dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * (i % 4)
+            self.msg_engine.draw_string(screen, (dx, dy), self.COMMAND[i])
+
+        for i in range(4, 8):
+            dx = self.text_rect[0] + MessageEngine.FONT_WIDTH * 6
+            dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * (i % 4)
+            self.msg_engine.draw_string(screen, (dx, dy), self.COMMAND[i])
+
+        dx = self.text_rect[0] + MessageEngine.FONT_WIDTH * 5 * (self.command /  4)
+        dy = self.text_rect[1] + (self.LINE_HEIGHT + MessageEngine.FONT_HEIGHT) * (self.command % 4)
+        screen.blit(self.cursor, (dx, dy))
+
+    def show(self):
+        self.command = self.TALK
+        self.is_visible = True
 
 class MoveEvent():
     def __init__(self, pos, mapchip, dest_map, dest_pos):
