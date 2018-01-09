@@ -38,7 +38,7 @@ def main():
         map.draw(screen, offset)
         msgwnd.draw(screen)
         cmdwnd.draw(screen)
-        show_info(screen, msg_engine, player, map)
+        # show_info(screen, msg_engine, player, map)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -46,9 +46,6 @@ def main():
                 sys.exit()
 
             if event.type == KEYDOWN and event.key == K_ESCAPE:
-                sys.exit()
-
-            if event.type == KEYDOWN and event.key == K_SPACE:
                 sys.exit()
 
             if cmdwnd.is_visible:
@@ -62,19 +59,19 @@ def main():
 
 def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
     if  event.type == KEYDOWN and event.key == K_LEFT:
-        if cmdwnd.comand <= 3:
+        if cmdwnd.command <= 3:
             return
         cmdwnd.command -= 4
     elif  event.type == KEYDOWN and event.key == K_RIGHT:
-        if cmdwnd.comand >= 4:
+        if cmdwnd.command >= 4:
             return
         cmdwnd.command += 4
     elif  event.type == KEYUP and event.key == K_UP:
-        if cmdwnd.comand == 0 or cmdwnd.command == 4:
+        if cmdwnd.command == 0 or cmdwnd.command == 4:
             return
         cmdwnd.command -= 1
     elif  event.type == KEYDOWN and event.key == K_DOWN:
-        if cmdwnd.comand == 3 or cmdwnd.command == 7:
+        if cmdwnd.command == 3 or cmdwnd.command == 7:
             return
         cmdwnd.command += 1
 
