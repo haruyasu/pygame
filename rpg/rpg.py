@@ -467,12 +467,24 @@ class Player(Character):
         nextx, nexty = self.x, self.y
         if self.direction == DOWN:
             nexty = self.y + 1
+            event = map.get_event(nextx, nexty)
+            if isinstance(event, Object) and event.mapchip == 41:
+                nexty += 1
         elif self.direction == LEFT:
             nextx = self.x - 1
+            event = map.get_event(nextx, nexty)
+            if isinstance(event, Object) and event.mapchip == 41:
+                nextx -= 1
         elif self.direction == RIGHT:
             nextx = self.x + 1
+            event = map.get_event(nextx, nexty)
+            if isinstance(event, Object) and event.mapchip == 41:
+                nextx += 1
         elif self.direction == UP:
             nexty = self.y - 1
+            event = map.get_event(nextx, nexty)
+            if isinstance(event, Object) and event.mapchip == 41:
+                nexty -= 1
 
         chara = map.get_chara(nextx, nexty)
 
