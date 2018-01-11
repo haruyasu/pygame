@@ -21,9 +21,18 @@ def main():
     load_charachips("data", "charachip.dat")
     load_mapchips("data", "mapchip.dat")
 
-    map = Map("field")
-    player = Player("blue_slime", (1, 1), DOWN)
-    map.add_chara(player)
+    party = Party()
+    player1 = Player("swordman_female", (3, 5), DOWN, True, party)
+    player2 = Player("elf_female2", (3, 4), DOWN, False, party)
+    player3 = Player("priestess", (3, 3), DOWN, False, party)
+    player4 = Player("magician_female", (3, 2), DOWN, False, party)
+    party.add(player1)
+    party.add(player2)
+    party.add(player3)
+    party.add(player4)
+
+    map = Map("field", party)
+
     msg_engine = MessageEngine()
     msgwnd = MessageWindow(Rect(140, 334, 360, 140), msg_engine)
     cmdwnd = CommandWindow(Rect(16, 16, 216, 160), msg_engine)
@@ -33,12 +42,13 @@ def main():
         clock.tick(60)
         if not msgwnd.is_visible and not cmdwnd.is_visible:
             map.update()
+            party.update(map)
         msgwnd.update()
-        offset = calc_offset(player)
+        offset = calc_offset(player.member[0])
         map.draw(screen, offset)
         msgwnd.draw(screen)
         cmdwnd.draw(screen)
-        # show_info(screen, msg_engine, player, map)
+        # show_info(screen, msg_engine, player.member[0], map)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -49,7 +59,7 @@ def main():
                 sys.exit()
 
             if cmdwnd.is_visible:
-                cmdwnd_handler(event, cmdwnd, msgwnd, player, map)
+                cmdwnd_handler(event, cmdwnd, msgwnd, party.member[0], map)
             elif msgwnd.is_visible:
                 msgwnd.next()
             else:
@@ -202,13 +212,14 @@ def split_image(image):
 class Map:
     images = []
     movable_type = []
-    def __init__(self, name):
+    def __init__(self, name, party):
         self.name = name
         self.row = -1
         self.col = -1
         self.map = []
         self.charas = []
         self.events = []
+        self.party = party
         self.load()
         self.load_event()
 
@@ -260,6 +271,9 @@ class Map:
             if self.movable_type[event.mapchip] == 0:
                 if event.x == x and event.y == y:
                     return False
+        player = self.party.member[0]
+        if player.x == x and player.y == y:
+            return False
 
         return True
 
@@ -417,8 +431,10 @@ class Character:
         return "CHARA,%s,%d,%d,%d,%d,%s" % (self.name, self.x, self.y, self.direction, self.movetype, self.message)
 
 class Player(Character):
-    def __init__(self, name, pos, dir):
+    def __init__(self, name, pos, dir, leader, party):
         Character.__init__(self, name, pos, dir, False, None)
+        self.leader = leader
+        self.party = party
 
     def update(self, map):
         if self.moving == True:
@@ -428,6 +444,9 @@ class Player(Character):
                 self.x = self.rect.left / GS
                 self.y = self.rect.top / GS
 
+                if not self.leader:
+                    return
+
                 event = map.get_event(self.x, self.y)
                 if isinstance(event, MoveEvent):
                     sounds["step"].play()
@@ -435,33 +454,29 @@ class Player(Character):
                     dest_x = event.dest_x
                     dest_y = event.dest_y
                     map.create(dest_map)
-                    self.set_pos(dest_x, dest_y, DOWN)
-                    map.add_chara(self)
-        else:
-            pressed_keys = pygame.key.get_pressed()
-            if pressed_keys[K_DOWN]:
-                self.direction = DOWN
-                if map.is_movable(self.x, self.y + 1):
-                    self.vx, self.vy = 0, self.speed
-                    self.moving = True
-            elif pressed_keys[K_LEFT]:
-                self.direction = LEFT
-                if map.is_movable(self.x - 1, self.y):
-                    self.vx, self.vy = -self.speed, 0
-                    self.moving = True
-            elif pressed_keys[K_RIGHT]:
-                self.direction = RIGHT
-                if map.is_movable(self.x + 1, self.y):
-                    self.vx, self.vy = self.speed, 0
-                    self.moving = True
-            elif pressed_keys[K_UP]:
-                self.direction = UP
-                if map.is_movable(self.x, self.y - 1):
-                    self.vx, self.vy = 0, -self.speed
-                    self.moving = True
+
+                    for player in self.party.member:
+                        player.set_pos(dest_x, dest_y, DOWN)
+                        player.moving = False
 
         self.frame += 1
         self.image = self.images[self.name][self.direction * 4 + self.frame / self.animcycle % 4]
+
+    def move_to(self, destx, desty):
+        dx = destx - self.x
+        dy = desty - self.y
+
+        if dx == 1:
+            self.direction = RIGHT
+        elif dx == -1:
+            self.direction = LEFT
+        elif dy == -1:
+            self.direction = UP
+        elif dy == 1:
+            self.direction = DOWN
+
+        self.vx, self.vy = dy * self.speed, dy * self.speed
+        self.moving = True
 
     def talk(self, map):
         nextx, nexty = self.x, self.y
