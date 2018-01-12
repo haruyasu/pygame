@@ -44,8 +44,9 @@ def main():
             map.update()
             party.update(map)
         msgwnd.update()
-        offset = calc_offset(player.member[0])
+        offset = calc_offset(party.member[0])
         map.draw(screen, offset)
+        party.draw(screen, offset)
         msgwnd.draw(screen)
         cmdwnd.draw(screen)
         # show_info(screen, msg_engine, player.member[0], map)
@@ -537,6 +538,47 @@ class Player(Character):
         if isinstance(event, Door):
             return event
         return None
+class Party:
+    def __init__(self):
+        self.member = []
+
+    def add(self, player):
+        self.member.append(player)
+
+    def update(self, map):
+        for player  in self.member:
+            player.update(map)
+
+        if not self.member[0].moving:
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_DOWN]:
+                self.member[0].direction = DOWN
+
+                if map.is_movable(self.member[0].x, self.member[0].y + 1):
+                    for i in range(len(self.member) - 1, 0, -1):
+                        self.member[i].move_to(self.member[i - 1].x, self.member[i - 1].y)
+                    self.member[0].move_to(self.member[0].x, self.member[0].y + 1)
+            elif pressed_keys[K_LEFT]:
+                self.member[0].direction = LEFT
+                if map.is_movable(self.member[0].x - 1, self.member[0].y):
+                    for i in range(len(self.member) - 1, 0, -1):
+                        self.member[i].move_to(self.member[i - 1].x, self.member[i - 1].y)
+                    self.member[0].move_to(self.member[0].x - 1, self.member[0].y)
+            elif pressed_keys[K_RIGHT]:
+                self.member[0].direction = RIGHT
+                if map.is_movable(self.member[0].x + 1, self.member[0].y):
+                    for i in range(len(self.member) - 1, 0, -1):
+                        self.member[i].move_to(self.member[i - 1].x, self.member[i - 1].y)
+                    self.member[0].move_to(self.member[0].x + 1, self.member[0].y)
+            elif pressed_keys[K_UP]:
+                self.member[0].direction = UP
+                if map.is_movable(self.member[0].x, self.member[0].y - 1):
+                    for i in range(len(self.member) - 1, 0, -1):
+                        self.member[i].move_to(self.member[i - 1].x, self.member[i - 1].y)
+                    self.member[0].move_to(self.member[0].x, self.member[0].y - 1)
+    def draw(self, screen, offset):
+        for player in self.member[::-1]:
+            player.draw(screen, offset)
 
 class MessageEngine:
     FONT_WIDTH = 16
