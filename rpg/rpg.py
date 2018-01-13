@@ -12,61 +12,109 @@ TRANS_COLOR = (190, 179, 145)
 
 sounds = {}
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode(SCR_RECT.size)
-    pygame.display.set_caption("RPG")
+TITLE, FIELD, TALK, COMMAND = range(4)
 
-    load_sounds("data", "sound.dat")
-    load_charachips("data", "charachip.dat")
-    load_mapchips("data", "mapchip.dat")
+def load_image(dir, file, colorkey=None):
+    file = os.path.join(dir, file)
+    try:
+        image = pygame.image.load(file)
+    except pygame.error, message:
+        print "Cannot load image:", file
+        raise SystemExit, message
+    image = image.convert()
+    if colorkey is not None:
+        if colorkey is -1:
+            colorkey = image.get_at((0,0))
+        image.set_colorkey(colorkey, RLEACCEL)
+    return image
 
-    party = Party()
-    player1 = Player("swordman_female", (3, 5), DOWN, True, party)
-    player2 = Player("elf_female2", (3, 4), DOWN, False, party)
-    player3 = Player("priestess", (3, 3), DOWN, False, party)
-    player4 = Player("magician_female", (3, 2), DOWN, False, party)
-    party.add(player1)
-    party.add(player2)
-    party.add(player3)
-    party.add(player4)
+def split_image(image):
+    imageList = []
+    for i in range(0, 128, GS):
+        for j in range(0, 128, GS):
+            surface = pygame.Surface((GS, GS))
+            surface.blit(image, (0, 0), (j, i, GS, GS))
+            surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
+            surface.convert()
+            imageList.append(surface)
+    return imageList
 
-    map = Map("field", party)
+class PyRPG():
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode(SCR_RECT.size)
+        pygame.display.set_caption("RPG")
 
-    msg_engine = MessageEngine()
-    msgwnd = MessageWindow(Rect(140, 334, 360, 140), msg_engine)
-    cmdwnd = CommandWindow(Rect(16, 16, 216, 160), msg_engine)
-    clock = pygame.time.Clock()
+        self.load_sounds("data", "sound.dat")
+        self.load_charachips("data", "charachip.dat")
+        self.load_mapchips("data", "mapchip.dat")
 
-    while True:
-        clock.tick(60)
-        if not msgwnd.is_visible and not cmdwnd.is_visible:
-            map.update()
-            party.update(map)
-        msgwnd.update()
-        offset = calc_offset(party.member[0])
-        map.draw(screen, offset)
-        party.draw(screen, offset)
-        msgwnd.draw(screen)
-        cmdwnd.draw(screen)
-        # show_info(screen, msg_engine, player.member[0], map)
-        pygame.display.update()
+        party = Party()
+        player1 = Player("swordman_female", (3, 5), DOWN, True, self.party)
+        player2 = Player("elf_female2", (3, 4), DOWN, False, self.party)
+        player3 = Player("priestess", (3, 3), DOWN, False, self.party)
+        player4 = Player("magician_female", (3, 2), DOWN, False, self.party)
+        self.party.add(player1)
+        self.party.add(player2)
+        self.party.add(player3)
+        self.party.add(player4)
 
+        self.map = Map("field", self.party)
+
+        self.msg_engine = MessageEngine()
+        self.msgwnd = MessageWindow(Rect(140, 334, 360, 140), self.msg_engine)
+        self.cmdwnd = CommandWindow(Rect(16, 16, 216, 160), self.msg_engine)
+        self.title = Title(self.msg_engine)
+        self.game_state = TITLE
+        self.mainloop()
+
+    def mainloop(self):
+        self.clock = pygame.time.Clock()
+        while True:
+            clock.tick(60)
+            self.update()
+            self.render()
+            pygame.display.update()
+            self.check_event()
+
+    def update(self):
+        if self.game_state == TITLE:
+            self.title.update()
+        elif self.game_state == FIELD:
+            self.map.update()
+            self.party.update(self.map)
+        elif self.game_state == TALK:
+            self.msgwnd.update()
+
+    def render(self):
+        if self.game_state == TITLE:
+            self.title.draw(self.screen)
+        elif self.game_state == FIELD or self.game_state == TALK or self.game_state == COMMAND:
+            offset = self.calc_offset(self.party.member[0])
+            self.map.draw(self.screen, offset)
+            self.party.draw(self.screen, offset)
+            self.msgwnd.draw(self.screen)
+            self.cmdwnd.draw(self.screen)
+            self.show_info()
+
+    def check_event(self):
         for event in pygame.event.get():
             if event.type == QUIT:
+                pygame.quit()
                 sys.exit()
 
             if event.type == KEYDOWN and event.key == K_ESCAPE:
+                pygame.quit()
                 sys.exit()
 
-            if cmdwnd.is_visible:
-                cmdwnd_handler(event, cmdwnd, msgwnd, party.member[0], map)
-            elif msgwnd.is_visible:
-                msgwnd.next()
-            else:
-                if event.type == KEYDOWN and event.key == K_SPACE:
-                    sounds["pi"].play()
-                    cmdwnd.show()
+            if self.game_state == TITLE:
+                self.title_handler(event)
+            elif self.game_state == FIELD:
+                self.field_handler(event)
+            elif self.game_state == COMMAND:
+                self.cmd_handler(event)
+            elif self.game_state == TALK:
+                self.talk_handler(event)
 
 def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
     if  event.type == KEYDOWN and event.key == K_LEFT:
@@ -185,30 +233,7 @@ def calc_offset(player):
     offsety = player.rect.topleft[1] - SCR_RECT.height / 2
     return offsetx, offsety
 
-def load_image(dir, file, colorkey=None):
-    file = os.path.join(dir, file)
-    try:
-        image = pygame.image.load(file)
-    except pygame.error, message:
-        print "Cannot load image:", file
-        raise SystemExit, message
-    image = image.convert()
-    if colorkey is not None:
-        if colorkey is -1:
-            colorkey = image.get_at((0,0))
-        image.set_colorkey(colorkey, RLEACCEL)
-    return image
 
-def split_image(image):
-    imageList = []
-    for i in range(0, 128, GS):
-        for j in range(0, 128, GS):
-            surface = pygame.Surface((GS, GS))
-            surface.blit(image, (0, 0), (j, i, GS, GS))
-            surface.set_colorkey(surface.get_at((0, 0)), RLEACCEL)
-            surface.convert()
-            imageList.append(surface)
-    return imageList
 
 class Map:
     images = []
