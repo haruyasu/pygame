@@ -115,123 +115,161 @@ class PyRPG():
                 self.cmd_handler(event)
             elif self.game_state == TALK:
                 self.talk_handler(event)
-
-def cmdwnd_handler(event, cmdwnd, msgwnd, player, map):
-    if  event.type == KEYDOWN and event.key == K_LEFT:
-        if cmdwnd.command <= 3:
-            return
-        cmdwnd.command -= 4
-    elif  event.type == KEYDOWN and event.key == K_RIGHT:
-        if cmdwnd.command >= 4:
-            return
-        cmdwnd.command += 4
-    elif  event.type == KEYUP and event.key == K_UP:
-        if cmdwnd.command == 0 or cmdwnd.command == 4:
-            return
-        cmdwnd.command -= 1
-    elif  event.type == KEYDOWN and event.key == K_DOWN:
-        if cmdwnd.command == 3 or cmdwnd.command == 7:
-            return
-        cmdwnd.command += 1
-
-    if event.type == KEYDOWN and event.key == K_SPACE:
-        if cmdwnd.command == CommandWindow.TALK:
+    def title_handler(self, event):
+        if event.type == KEYUP and event.key == K_UP:
+            self.title.menu -= 1
+            if self.title.menu < 0:
+                self.title.menu = 0
+        elif event.type == KEYDOWN and event.key == K_DOWN:
+            self.title.menu += 1
+            if self.title.menu > 2:
+                self.title.menu = 2
+        if event.type == KEYDOWN and event.key == K_SPACE:
             sounds["pi"].play()
-            cmdwnd.hide()
-            chara = player.talk(map)
-            if chara != None:
-                msgwnd.set(chara.message)
+            if self.title.menu == Title.START:
+                self.game_state = FIELD
+                self.map.create("field")
+            elif self.title.menu == Title.CONTINUE:
+                pass
+            elif self.title.menu == Title.EXIT:
+                pygame.quit()
+                sys.exit()
+
+    def field_handler(self, event):
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            sounds["pi"].play()
+            self.cmdwnd.show()
+            self.game_state = COMMAND
+
+    def cmd_handler(self, event):
+        player = self.party.member[0]
+
+        if  event.type == KEYDOWN and event.key == K_LEFT:
+            if self.cmdwnd.command <= 3:
+                return
+            self.cmdwnd.command -= 4
+        elif  event.type == KEYDOWN and event.key == K_RIGHT:
+            if self.cmdwnd.command >= 4:
+                return
+            self.cmdwnd.command += 4
+        elif  event.type == KEYUP and event.key == K_UP:
+            if self.cmdwnd.command == 0 or self.cmdwnd.command == 4:
+                return
+            self.cmdwnd.command -= 1
+        elif  event.type == KEYDOWN and event.key == K_DOWN:
+            if self.cmdwnd.command == 3 or self.cmdwnd.command == 7:
+                return
+            self.cmdwnd.command += 1
+
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            if self.cmdwnd.command == CommandWindow.TALK:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                chara = player.talk(self.map)
+                if chara != None:
+                    self.msgwnd.set(chara.message)
+                    self.game_state = TALK
+                else:
+                    self.msgwnd.set("Nobody there!")
+                    self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.STATUS:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                self.msgwnd.set("STATUS WINDOW")
+                self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.EQUIPMENT:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                self.msgwnd.set("EQUIPMENT WINDOW")
+                self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.DOOR:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                door = player.open(self.map)
+                if door != None:
+                    door.open()
+                    self.map.remove_event(door)
+                    self.game_state = FIELD
+                else:
+                    msgwnd.set("No Door")
+                    self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.SPELL:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                self.msgwnd.set("SPELL WINDOW")
+                self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.ITEM:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                self.msgwnd.set("ITEM WINDOW")
+                self.game_state = TALK
+            elif self.cmdwnd.command == CommandWindow.TACTICS:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                self.msgwnd.set("TACTICS WINDOW")
+                self.game_state = TALK
+            elif cmdwnd.command == CommandWindow.SEARCH:
+                sounds["pi"].play()
+                self.cmdwnd.hide()
+                treasure = player.search(self.map)
+                if treasure != None:
+                    treasure.open()
+                    self.msgwnd.set("GET %s" % treasure.item)
+                    self.map.remove_event(treasure)
+                    self.game_state = TALK
+                else:
+                    self.msgwnd.set("CAN'T FIND")
+                    self.game_state = TALK
+
+    def show_info(screen, msg_engine, player, map):
+        msg_engine.draw_string(screen, (10, 10), map.name.upper())
+        msg_engine.draw_string(screen, (10, 40), player.name.upper())
+        msg_engine.draw_string(screen, (10, 70), "%d_%d" % (player.x, player.y))
+
+    def load_sounds(dir, file):
+        file = os.path.join(dir, file)
+        fp = open(file, "r")
+        for line in fp:
+            line = line.rstrip()
+            data = line.split(",")
+            se_name = data[0]
+            se_file = os.path.join("se", data[1])
+            sounds[se_name] = pygame.mixer.Sound(se_file)
+        fp.close()
+
+    def load_charachips(dir, file):
+        file = os.path.join(dir, file)
+        fp = open(file, "r")
+        for line in fp:
+            line = line.rstrip()
+            data = line.split(",")
+            chara_id = int(data[0])
+            chara_name = data[1]
+            Character.images[chara_name] = split_image(load_image("charachip", "%s.png" % chara_name))
+        fp.close()
+
+    def load_mapchips(dir, file):
+        file = os.path.join(dir, file)
+        fp = open(file, "r")
+        for line in fp:
+            line = line.rstrip()
+            data = line.split(",")
+            mapchip_id = int(data[0])
+            mapchip_name = data[1]
+            movable = int(data[2])
+            transparent = int(data[3])
+
+            if transparent == 0:
+                Map.images.append(load_image("mapchip", "%s.png" % mapchip_name))
             else:
-                msgwnd.set("Nobody there!")
-        elif cmdwnd.command == CommandWindow.STATUS:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            msgwnd.set("STATUS WINDOW")
-        elif cmdwnd.command == CommandWindow.EQUIPMENT:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            msgwnd.set("EQUIPMENT WINDOW")
-        elif cmdwnd.command == CommandWindow.DOOR:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            door = player.open(map)
-            if door != None:
-                door.open()
-                map.remove_event(door)
-            else:
-                msgwnd.set("No Door")
-        elif cmdwnd.command == CommandWindow.SPELL:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            msgwnd.set("SPELL WINDOW")
-        elif cmdwnd.command == CommandWindow.ITEM:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            msgwnd.set("ITEM WINDOW")
-        elif cmdwnd.command == CommandWindow.TACTICS:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            msgwnd.set("TACTICS WINDOW")
-        elif cmdwnd.command == CommandWindow.SEARCH:
-            sounds["pi"].play()
-            cmdwnd.hide()
-            treasure = player.search(map)
-            if treasure != None:
-                treasure.open()
-                msgwnd.set("GET %s" % treasure.item)
-                map.remove_event(treasure)
-            else:
-                msgwnd.set("CAN'T FIND")
+                Map.images.append(load_image("mapchip", "%s.png" % mapchip_name, TRANS_COLOR))
+            Map.movable_type.append(movable)
+        fp.close()
 
-def show_info(screen, msg_engine, player, map):
-    msg_engine.draw_string(screen, (10, 10), map.name.upper())
-    msg_engine.draw_string(screen, (10, 40), player.name.upper())
-    msg_engine.draw_string(screen, (10, 70), "%d_%d" % (player.x, player.y))
-
-def load_sounds(dir, file):
-    file = os.path.join(dir, file)
-    fp = open(file, "r")
-    for line in fp:
-        line = line.rstrip()
-        data = line.split(",")
-        se_name = data[0]
-        se_file = os.path.join("se", data[1])
-        sounds[se_name] = pygame.mixer.Sound(se_file)
-    fp.close()
-
-def load_charachips(dir, file):
-    file = os.path.join(dir, file)
-    fp = open(file, "r")
-    for line in fp:
-        line = line.rstrip()
-        data = line.split(",")
-        chara_id = int(data[0])
-        chara_name = data[1]
-        Character.images[chara_name] = split_image(load_image("charachip", "%s.png" % chara_name))
-    fp.close()
-
-def load_mapchips(dir, file):
-    file = os.path.join(dir, file)
-    fp = open(file, "r")
-    for line in fp:
-        line = line.rstrip()
-        data = line.split(",")
-        mapchip_id = int(data[0])
-        mapchip_name = data[1]
-        movable = int(data[2])
-        transparent = int(data[3])
-
-        if transparent == 0:
-            Map.images.append(load_image("mapchip", "%s.png" % mapchip_name))
-        else:
-            Map.images.append(load_image("mapchip", "%s.png" % mapchip_name, TRANS_COLOR))
-        Map.movable_type.append(movable)
-    fp.close()
-
-def calc_offset(player):
-    offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
-    offsety = player.rect.topleft[1] - SCR_RECT.height / 2
-    return offsetx, offsety
+    def calc_offset(player):
+        offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
+        offsety = player.rect.topleft[1] - SCR_RECT.height / 2
+        return offsetx, offsety
 
 
 
