@@ -49,7 +49,7 @@ class PyRPG():
         self.load_charachips("data", "charachip.dat")
         self.load_mapchips("data", "mapchip.dat")
 
-        party = Party()
+        self.party = Party()
         player1 = Player("swordman_female", (3, 5), DOWN, True, self.party)
         player2 = Player("elf_female2", (3, 4), DOWN, False, self.party)
         player3 = Player("priestess", (3, 3), DOWN, False, self.party)
@@ -69,7 +69,7 @@ class PyRPG():
         self.mainloop()
 
     def mainloop(self):
-        self.clock = pygame.time.Clock()
+        clock = pygame.time.Clock()
         while True:
             clock.tick(60)
             self.update()
@@ -221,12 +221,23 @@ class PyRPG():
                     self.msgwnd.set("CAN'T FIND")
                     self.game_state = TALK
 
-    def show_info(screen, msg_engine, player, map):
-        msg_engine.draw_string(screen, (10, 10), map.name.upper())
-        msg_engine.draw_string(screen, (10, 40), player.name.upper())
-        msg_engine.draw_string(screen, (10, 70), "%d_%d" % (player.x, player.y))
+    def talk_handler(self, event):
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            if not self.msgwnd.next():
+                self.game_state = FIELD
 
-    def load_sounds(dir, file):
+    def calc_offset(self, player):
+        offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
+        offsety = player.rect.topleft[1] - SCR_RECT.height / 2
+        return offsetx, offsety
+
+    def show_info(self):
+        player = self.party.member[0]
+        self.msg_engine.draw_string(self.screen, (10, 10), self.map.name.upper())
+        self.msg_engine.draw_string(self.screen, (10, 40), player.name.upper())
+        self.msg_engine.draw_string(self.screen, (10, 70), "%d_%d" % (player.x, player.y))
+
+    def load_sounds(self, dir, file):
         file = os.path.join(dir, file)
         fp = open(file, "r")
         for line in fp:
@@ -237,7 +248,7 @@ class PyRPG():
             sounds[se_name] = pygame.mixer.Sound(se_file)
         fp.close()
 
-    def load_charachips(dir, file):
+    def load_charachips(self, dir, file):
         file = os.path.join(dir, file)
         fp = open(file, "r")
         for line in fp:
@@ -248,7 +259,7 @@ class PyRPG():
             Character.images[chara_name] = split_image(load_image("charachip", "%s.png" % chara_name))
         fp.close()
 
-    def load_mapchips(dir, file):
+    def load_mapchips(self, dir, file):
         file = os.path.join(dir, file)
         fp = open(file, "r")
         for line in fp:
@@ -265,13 +276,6 @@ class PyRPG():
                 Map.images.append(load_image("mapchip", "%s.png" % mapchip_name, TRANS_COLOR))
             Map.movable_type.append(movable)
         fp.close()
-
-    def calc_offset(player):
-        offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
-        offsety = player.rect.topleft[1] - SCR_RECT.height / 2
-        return offsetx, offsety
-
-
 
 class Map:
     images = []
@@ -601,6 +605,7 @@ class Player(Character):
         if isinstance(event, Door):
             return event
         return None
+
 class Party:
     def __init__(self):
         self.member = []
@@ -695,7 +700,7 @@ class Window:
         if self.is_visible == False:
             return
         pygame.draw.rect(screen, (255, 255, 255), self.rect, 0)
-        pygame.draw.rect(screen, (0, 0, 0), self.rect, 0)
+        pygame.draw.rect(screen, (0, 0, 0), self.inner_rect, 0)
 
     def show(self):
         self.is_visible = True
@@ -792,11 +797,13 @@ class MessageWindow(Window):
     def next(self):
         if self.hide_flag:
             self.hide()
+            return False
 
         if self.next_flag:
             self.cur_page += 1
             self.cur_page = 0
             self.next_flag = False
+            return True
 
 class CommandWindow(Window):
     LINE_HEIGHT = 8
@@ -907,5 +914,38 @@ class Object:
     def __str__(self):
         return "OBJECT, %d, %d, %d" % (self.x, self.y, mapchip)
 
+class Title:
+    START, CONTINUE, EXIT = 0, 1, 2
+    def __init__(self, msg_engine):
+        self.msg_engine = msg_engine
+        self.title_img = load_image("data", "python_quest.png", -1)
+        self.cursor_img = load_image("data", "cursor2.png", -1)
+        self.menu = self.START
+        self.play_bgm()
+
+    def update(self):
+        pass
+
+    def draw(self, screen):
+        screen.fill((0, 0, 128))
+        screen.blit(self.title_img, (20, 60))
+
+        self.msg_engine.draw_string(screen, (260,240), u"ＳＴＡＲＴ")
+        self.msg_engine.draw_string(screen, (260,280), u"ＣＯＮＴＩＮＵＥ")
+        self.msg_engine.draw_string(screen, (260,320), u"ＥＸＩＴ")
+
+        if self.menu == self.START:
+            screen.blit(self.cursor_img, (240, 240))
+        elif self.menu == self.CONTINUE:
+            screen.blit(self.cursor_img, (240, 280))
+        elif self.menu == self.EXIT:
+            screen.blit(self.cursor_img, (240, 320))
+
+    def play_bgm(self):
+        bgm_file = "title.mp3"
+        bgm_file = os.path.join("bgm", bgm_file)
+        pygame.mixer.music.load(bgm_file)
+        pygame.mixer.music.play(-1)
+
 if __name__ == '__main__':
-    main()
+    PyRPG()
