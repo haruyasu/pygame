@@ -543,7 +543,7 @@ class Player(Character):
         elif dy == 1:
             self.direction = DOWN
 
-        self.vx, self.vy = dy * self.speed, dy * self.speed
+        self.vx, self.vy = dx * self.speed, dy * self.speed
         self.moving = True
 
     def talk(self, map):
