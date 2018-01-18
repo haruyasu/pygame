@@ -9,9 +9,7 @@ DOWN, LEFT, RIGHT, UP = 0, 1, 2, 3
 STOP, MOVE = 0, 1
 PROB_MOVE = 0.005
 TRANS_COLOR = (190, 179, 145)
-
 sounds = {}
-
 TITLE, FIELD, TALK, COMMAND = range(4)
 
 def load_image(dir, file, colorkey=None):
