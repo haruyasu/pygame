@@ -10,7 +10,7 @@ STOP, MOVE = 0, 1
 PROB_MOVE = 0.005
 TRANS_COLOR = (190, 179, 145)
 sounds = {}
-TITLE, FIELD, TALK, COMMAND = range(4)
+TITLE, FIELD, TALK, COMMAND, BATTLE_INIT, BATTLE_COMMAND, BATTLE_PROCESS = range(7)
 
 def load_image(dir, file, colorkey=None):
     file = os.path.join(dir, file)
@@ -63,7 +63,9 @@ class PyRPG():
         self.msgwnd = MessageWindow(Rect(140, 334, 360, 140), self.msg_engine)
         self.cmdwnd = CommandWindow(Rect(16, 16, 216, 160), self.msg_engine)
         self.title = Title(self.msg_engine)
-        self.game_state = TITLE
+        self.battle = BAttle(self.msgwnd, self.msg_engine)
+        global game_state
+        game_state = TITLE
         self.mainloop()
 
     def mainloop(self):
@@ -76,26 +78,35 @@ class PyRPG():
             self.check_event()
 
     def update(self):
-        if self.game_state == TITLE:
+        global game_state
+        if game_state == TITLE:
             self.title.update()
-        elif self.game_state == FIELD:
+        elif game_state == FIELD:
             self.map.update()
             self.party.update(self.map)
-        elif self.game_state == TALK:
+        elif game_state == TALK:
+            self.msgwnd.update()
+        elif game_state == BATTLE_INIT or game_state == BATTLE_COMMAND or game_state == BATTLE_PROCESS:
+            self.battle.update()
             self.msgwnd.update()
 
     def render(self):
-        if self.game_state == TITLE:
+        global game_state
+        if game_state == TITLE:
             self.title.draw(self.screen)
-        elif self.game_state == FIELD or self.game_state == TALK or self.game_state == COMMAND:
+        elif game_state == FIELD or game_state == TALK or game_state == COMMAND:
             offset = self.calc_offset(self.party.member[0])
             self.map.draw(self.screen, offset)
             self.party.draw(self.screen, offset)
             self.msgwnd.draw(self.screen)
             self.cmdwnd.draw(self.screen)
             self.show_info()
+        elif game_state in (BATTLE_INIT, BATTLE_COMMAND, BATTLE_PROCESS):
+            self.battle.draw(self.screen)
+            self.msgwnd.draw(self.screen)
 
     def check_event(self):
+        global game_state
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -105,15 +116,23 @@ class PyRPG():
                 pygame.quit()
                 sys.exit()
 
-            if self.game_state == TITLE:
+            if game_state == TITLE:
                 self.title_handler(event)
-            elif self.game_state == FIELD:
+            elif game_state == FIELD:
                 self.field_handler(event)
-            elif self.game_state == COMMAND:
+            elif game_state == COMMAND:
                 self.cmd_handler(event)
-            elif self.game_state == TALK:
+            elif game_state == TALK:
                 self.talk_handler(event)
+            elif game_state == BATTLE_INIT:
+                self.battle_init_handler(event)
+            elif game_state == BATTLE_COMMAND:
+                self.battle_cmd_handler(event)
+            elif game_state == BATTLE_PROCESS:
+                self.battle_proc_handler(event)
+
     def title_handler(self, event):
+        global game_state
         if event.type == KEYUP and event.key == K_UP:
             self.title.menu -= 1
             if self.title.menu < 0:
@@ -134,10 +153,11 @@ class PyRPG():
                 sys.exit()
 
     def field_handler(self, event):
+        global game_state
         if event.type == KEYDOWN and event.key == K_SPACE:
             sounds["pi"].play()
             self.cmdwnd.show()
-            self.game_state = COMMAND
+            game_state = COMMAND
 
     def cmd_handler(self, event):
         player = self.party.member[0]
