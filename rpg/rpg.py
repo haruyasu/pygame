@@ -160,6 +160,7 @@ class PyRPG():
             game_state = COMMAND
 
     def cmd_handler(self, event):
+        global game_state
         player = self.party.member[0]
 
         if  event.type == KEYDOWN and event.key == K_LEFT:
@@ -186,20 +187,20 @@ class PyRPG():
                 chara = player.talk(self.map)
                 if chara != None:
                     self.msgwnd.set(chara.message)
-                    self.game_state = TALK
+                    game_state = TALK
                 else:
                     self.msgwnd.set("Nobody there!")
-                    self.game_state = TALK
+                    game_state = TALK
             elif self.cmdwnd.command == CommandWindow.STATUS:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
                 self.msgwnd.set("STATUS WINDOW")
-                self.game_state = TALK
+                game_state = TALK
             elif self.cmdwnd.command == CommandWindow.EQUIPMENT:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
                 self.msgwnd.set("EQUIPMENT WINDOW")
-                self.game_state = TALK
+                game_state = TALK
             elif self.cmdwnd.command == CommandWindow.DOOR:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
@@ -207,25 +208,25 @@ class PyRPG():
                 if door != None:
                     door.open()
                     self.map.remove_event(door)
-                    self.game_state = FIELD
+                    game_state = FIELD
                 else:
                     msgwnd.set("No Door")
-                    self.game_state = TALK
+                    game_state = TALK
             elif self.cmdwnd.command == CommandWindow.SPELL:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
                 self.msgwnd.set("SPELL WINDOW")
-                self.game_state = TALK
+                game_state = TALK
             elif self.cmdwnd.command == CommandWindow.ITEM:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
                 self.msgwnd.set("ITEM WINDOW")
-                self.game_state = TALK
+                game_state = TALK
             elif self.cmdwnd.command == CommandWindow.TACTICS:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
                 self.msgwnd.set("TACTICS WINDOW")
-                self.game_state = TALK
+                game_state = TALK
             elif cmdwnd.command == CommandWindow.SEARCH:
                 sounds["pi"].play()
                 self.cmdwnd.hide()
@@ -234,15 +235,61 @@ class PyRPG():
                     treasure.open()
                     self.msgwnd.set("GET %s" % treasure.item)
                     self.map.remove_event(treasure)
-                    self.game_state = TALK
+                    game_state = TALK
                 else:
                     self.msgwnd.set("CAN'T FIND")
-                    self.game_state = TALK
+                    game_state = TALK
 
     def talk_handler(self, event):
+        global game_state
         if event.type == KEYDOWN and event.key == K_SPACE:
             if not self.msgwnd.next():
-                self.game_state = FIELD
+                game_state = FIELD
+
+    def battle_init_handler(self, event):
+        global game_state
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            self.msgwnd.hide()
+            sounds["pi"].play()
+            self.battle.cmdwnd.show()
+            for bsw in self.battle.status_wnd:
+                bsw.show()
+            game_state = BATTLE_COMMAND
+
+    def battle_cmd_handler(self, event):
+        global game_state
+        if event.type == KEYUP and event.key == K_UP:
+            if self.battle.cmdwnd.command == 0:
+                return
+            self.battle.cmdwnd.command -= 1
+        elif event.type == KEYDOWN and event.key == K_DOWN:
+            if self.battle.cmdwnd.command == 3:
+                return
+            self.battle.cmdwnd.command += 1
+
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            sounds["pi"].play()
+            if self.battle.cmdwnd.command == BattleCommandWindow.ATTACK:
+                self.msgwnd.set(u"むりです。")
+            elif self.battle.cmdwnd.command == BattleCommandWindow.SPELL:
+                self.msgwnd.set(u"おぼえていない。")
+            elif self.battle.cmdwnd.command == BattleCommandWindow.ITEM:
+                self.msgwnd.set(u"もっていない。")
+            elif self.battle.cmdwnd.command == BattleCommandWindow.ESCAPE:
+                self.msgwnd.set(u"にげた。)
+            self.battle.cmdwnd.hide()
+            game_state = BATTLE_PROCESS
+
+    def battle_proc_handler(self, event):
+        global game_state
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            self.msgwnd.hide()
+            if self.battle.cmdwnd.command == BattleCommandWindow.ESCAPE:
+                self.map.play_bgm()
+                game_state = FIELD
+            else:
+                self.battle.cmdwnd.show()
+                game_state = BATTLE_COMMAND
 
     def calc_offset(self, player):
         offsetx = player.rect.topleft[0] - SCR_RECT.width / 2
