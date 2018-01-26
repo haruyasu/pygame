@@ -298,9 +298,9 @@ class PyRPG():
 
     def show_info(self):
         player = self.party.member[0]
-        self.msg_engine.draw_string(self.screen, (10, 10), self.map.name.upper())
-        self.msg_engine.draw_string(self.screen, (10, 40), player.name.upper())
-        self.msg_engine.draw_string(self.screen, (10, 70), "%d_%d" % (player.x, player.y))
+        self.msg_engine.draw_string(self.screen, (300, 10), self.map.name.upper())
+        self.msg_engine.draw_string(self.screen, (300, 40), player.name.upper())
+        self.msg_engine.draw_string(self.screen, (300, 70), "%d_%d" % (player.x, player.y))
 
     def load_sounds(self, dir, file):
         file = os.path.join(dir, file)
@@ -464,10 +464,14 @@ class Map:
         fp.close()
 
     def play_bgm(self, data):
-        bgm_file = "%s.mp3" % data[1]
-        bgm_file = os.path.join("bgm", bgm_file)
-        pygame.mixer.music.load(bgm_file)
-        pygame.mixer.music.play(-1)
+        if not data:
+            pygame.mixer.music.load(self.bgm_file)
+            pygame.mixer.music.play(-1)
+        else:
+            bgm_file = "%s.mp3" % data[1]
+            self.bgm_file = os.path.join("bgm", bgm_file)
+            pygame.mixer.music.load(self.bgm_file)
+            pygame.mixer.music.play(-1)
 
     def create_chara(self, data):
         name = data[1]
@@ -569,7 +573,8 @@ class Player(Character):
         self.leader = leader
         self.party = party
 
-    def update(self, map):
+    def update(self, map, battle):
+        global game_state
         if self.moving == True:
             self.rect.move_ip(self.vx, self.vy)
             if self.rect.left % GS == 0 and self.rect.top % GS == 0:
