@@ -1017,5 +1017,46 @@ class Title:
         pygame.mixer.music.load(bgm_file)
         pygame.mixer.music.play(-1)
 
+class Battle:
+    def __init__(self, msgwnd, msg_engine):
+        self.msgwnd = msgwnd
+        self.msg_engine = msg_engine
+        self.cmdwnd = BattleCommandWindow(Rect(96, 338, 136, 136), self.msg_engine)
+        status = [[u"けんし　", 16, 0, 1],
+                  [u"エルフ　", 15, 24, 1],
+                  [u"そうりょ", 10, 8, 1],
+                  [u"まどうし", 8, 12, 1]]
+        self.status_wnd = []
+        self.status_wnd.append(BattleStatusWindow(Rect(90, 8, 104, 136), status[0], self.msg_engine))
+        self.status_wnd.append(BattleStatusWindow(Rect(210, 8, 104, 136), status[1], self.msg_engine))
+        self.status_wnd.append(BattleStatusWindow(Rect(330, 8, 104, 136), status[2], self.msg_engine))
+        self.status_wnd.append(BattleStatusWindow(Rect(450, 8, 104, 136), status[3], self.msg_engine))
+        self.monster_img = load_image("data", "dragon.png", -1)
+
+    def start(self):
+        self.cmdwnd.hide()
+        for bsw in self.status_wnd:
+            bsw.hide()
+        self.msgwnd.set(u"やまたのおろちが　あらわれた。")
+        self.play_bgm()
+
+    def update(self):
+        pass
+
+    def draw(self, screen):
+        screen.fill((0, 0, 0))
+        screen.blit(self.monster_img, (200, 170))
+        self.cmdwnd.draw(screen)
+        for bsw in self.status_wnd:
+            bsw.draw(screen)
+
+    def play_bgm(self):
+        bgm_file = "battle.mp3"
+        bgm_file = os.path.join("bgm", bgm_file)
+        pygame.mixier.music.load(bgm_file)
+        pygame.mixer.music.play(-1)
+        
+
+
 if __name__ == '__main__':
     PyRPG()
